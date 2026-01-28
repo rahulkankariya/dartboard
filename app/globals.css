@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme {
+  /* Define the variable names so Tailwind creates the utility classes */
+  --color-app-bg: var(--app-bg);
+  --color-app-text: var(--app-text);
+  --color-app-border: var(--app-border);
+  --color-app-accent: var(--app-accent);
+}
+
+:root {
+  /* 1. Default (Light Mode) Colors */
+  --app-bg: #ffffff;
+  --app-text: #1c1917;
+  --app-border: #e7e5e4;
+  --app-accent: #d97706;
+}
+
+.dark {
+  /* 2. Dark Mode Overrides */
+  --app-bg: #0c0a09;
+  --app-text: #f5f5f4;
+  --app-border: #292524;
+  --app-accent: #fbbf24;
+}
+
+@layer base {
+  body {
+    background-color: var(--app-bg);
+    color: var(--app-text);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+}
+@keyframes board-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cabinet-slide {
+  0%, 100% { transform: translateX(-40px); }
+  50% { transform: translateX(40px); }
+}
+
+.animate-board-rotate {
+  animation: board-rotate 12s linear infinite;
+}
+
+.animate-cabinet-slide {
+  animation: cabinet-slide 5s ease-in-out infinite;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+}
+/* src/components/games/DartGame/styles.css */
+@keyframes board-rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes cabinet-slide { 0%, 100% { transform: translateX(-40px); } 50% { transform: translateX(40px); } }
+
+.animate-board-rotate { animation: board-rotate 12s linear infinite; }
+.animate-cabinet-slide { animation: cabinet-slide 6s ease-in-out infinite; }
+
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
+
+/* Ensure the board doesn't overflow its container */
+.dart-viewport {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
