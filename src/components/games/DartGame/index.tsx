@@ -26,9 +26,9 @@ export const DartGame = ({ mode }: { mode: 'classic' | 'rotate' | 'slide' }) => 
   }, [mode]);
 
   const handleNewDart = (newDart: PlacedDart) => {
+    // ... (Logic remains the same for points calculation)
     const centerX = 50;
     const centerY = 50;
-    
     const dx = newDart.x - centerX;
     const dy = newDart.y - centerY;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -68,12 +68,11 @@ export const DartGame = ({ mode }: { mode: 'classic' | 'rotate' | 'slide' }) => 
     }
 
     const coordString = `X:${newDart.x.toFixed(1)} Y:${newDart.y.toFixed(1)}`;
-    const dartCount = darts.length + 1;
     const processedDart: PlacedDart = {
       ...newDart,
       id: Date.now().toString(),
       color: finalColor,
-      label: dartCount 
+      label: darts.length + 1 
     };
 
     setScore(s => s + points);
@@ -84,22 +83,27 @@ export const DartGame = ({ mode }: { mode: 'classic' | 'rotate' | 'slide' }) => 
   };
 
   return (
-    <div className="flex flex-col lg:flex-row w-full h-screen bg-slate-50 dark:bg-[#050505] lg:cursor-none relative overflow-hidden touch-none">
-      {/* Hide crosshair on touch devices to avoid confusion */}
+    // REMOVED: bg-slate-50 | ADDED: bg-app-bg
+    <div className="flex flex-col lg:flex-row w-full h-screen bg-app-bg lg:cursor-none relative overflow-hidden touch-none transition-colors duration-300">
+      
+      {/* CROSSHAIR */}
       <div className="hidden lg:block">
         <Crosshair pos={pos} />
       </div>
 
-      {/* Sidebar: Bottom on mobile, Side on Desktop */}
-      <div className="order-2 lg:order-1 w-full lg:w-72 h-[30vh] lg:h-full border-t lg:border-r border-slate-200 dark:border-white/10">
+      {/* SIDEBAR CONTAINER: Swapped border-slate-200 for border-app-border */}
+      <div className="order-2 lg:order-1 w-full lg:w-80 h-auto lg:h-full border-t lg:border-t-0 lg:border-r border-app-border">
         <Sidebar history={history} />
       </div>
       
-      {/* Main Game Area */}
-      <div className="order-1 lg:order-2 flex-1 flex flex-col items-center justify-center p-4 min-h-0">
+      {/* MAIN GAME AREA */}
+      <div className="order-1 lg:order-2 flex-1 flex flex-col items-center justify-center p-4 min-h-0 relative">
+        {/* Subtle Background Grid (Optional Tactical Flair) */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+             style={{ backgroundImage: 'radial-gradient(var(--app-text) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+
         <HUD score={score} lastHit={lastHit} dartsThrown={dartsThrown} />
         
-        {/* Dynamic scaling for the board */}
         <div className="relative w-full max-w-[min(75vw,75vh)] aspect-square mt-4">
           <DartBoard 
             boardRef={boardRef} 
