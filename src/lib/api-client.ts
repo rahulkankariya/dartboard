@@ -31,6 +31,7 @@ export async function apiRequest<T>(endpoint: string, options: AxiosRequestConfi
     // 3. Log the error specifically
     console.error("[API ERROR] Details:", error.response?.status, error.response?.data);
     const errorMessage = error.response?.data?.message || error.message || "Unknown API Error";
+    console.error(`[API ERROR] ${endpoint} - ${errorMessage}`);
     throw new Error(errorMessage);
   }
 }

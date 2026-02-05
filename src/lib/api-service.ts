@@ -9,7 +9,7 @@ export const authService = {
    * Logs in a user and returns token/user data
    */
   async login(payload: Record<string, any>): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>('/login', {
+    return apiRequest<AuthResponse>('/auth/login', {
       method: 'POST',
       data: payload,
     });
@@ -19,7 +19,7 @@ export const authService = {
    * Registers a new user and returns token/user data
    */
   async signup(payload: Record<string, any>): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>('/signup', {
+    return apiRequest<AuthResponse>('/auth/register', {
       method: 'POST',
       data: payload,
     });
