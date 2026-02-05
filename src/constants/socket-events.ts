@@ -1,5 +1,5 @@
 export const SOCKET_EVENTS = {
-  CONNECT: "connect",
+  CONNECT: "connection",
   DISCONNECT: "disconnect",
   SEND_MESSAGE: "send-message",
   RECEIVE_MESSAGE: "receive-message",

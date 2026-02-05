@@ -5,14 +5,17 @@ import { AuthSchema, FormState, AuthResponse } from "@/lib/definitions";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-export async function authenticate(prevState: FormState, formData: FormData): Promise<FormState> {
+export async function authenticate(
+  prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const rawData = Object.fromEntries(formData.entries());
   const validated = AuthSchema.safeParse(rawData);
 
   if (!validated.success) {
-    return { 
-      errors: validated.error.flatten().fieldErrors, 
-      message: "Check your tactical data input." 
+    return {
+      errors: validated.error.flatten().fieldErrors,
+      message: "Check your tactical data input.",
     };
   }
 
@@ -21,15 +24,15 @@ export async function authenticate(prevState: FormState, formData: FormData): Pr
 
   try {
     const isSignup = rawData.mode === "signup";
-    const response: AuthResponse = isSignup 
+    const response: AuthResponse = isSignup
       ? await authService.signup(validated.data)
       : await authService.login(validated.data);
 
     const token = response.data?.token || response.token;
-    
+
     // Extract user data for the frontend to save in localStorage
     userData = response.data?.user || null;
-    console.log("Authenticated User Data:", userData);
+    // console.log("Authenticated User Data:", userData);
     if (!token) {
       throw new Error(response.message || "No access token received.");
     }
@@ -39,15 +42,22 @@ export async function authenticate(prevState: FormState, formData: FormData): Pr
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
-      maxAge: 60 * 60 * 24, 
+      maxAge: 60 * 60 * 24,
+      sameSite: "lax",
+    });
+    cookieStore.set("socket-token", token, {
+      httpOnly: false, // <--- THIS allows getCookie() to see it
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 60 * 60 * 24,
       sameSite: "lax",
     });
 
     success = true;
   } catch (error: any) {
-    return { 
-      message: error.message || "Connection to HQ failed.", 
-      errors: {} 
+    return {
+      message: error.message || "Connection to HQ failed.",
+      errors: {},
     };
   }
 
@@ -57,10 +67,10 @@ export async function authenticate(prevState: FormState, formData: FormData): Pr
     redirect("/dashboard");
   }
 
-  return { 
-    message: "Success", 
+  return {
+    message: "Success",
     user: userData, // This is passed back to your Client Component
-    errors: {} 
+    errors: {},
   };
 }
 

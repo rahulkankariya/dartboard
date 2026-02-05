@@ -104,7 +104,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             disabled={pending}
             className="w-full py-4 border border-amber-600 text-amber-600 font-bold uppercase tracking-[0.2em] hover:bg-amber-600 hover:text-black transition-all disabled:opacity-30 active:scale-95"
           >
-            {pending ? "Verifying..." : mode === "login" ? "Enter System" : "Create Profile"}
+            {pending ? "Verifying..." : mode === "login" ? "Login" : "Create Profile"}
           </button>
         </form>
 

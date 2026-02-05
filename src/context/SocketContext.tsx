@@ -2,9 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io as ClientIO, Socket } from "socket.io-client";
-import { SOCKET_EVENTS } from "@/constants/socket-events";
 
-// Type definition for the Context state
 type SocketContextType = {
   socket: Socket | null;
   isConnected: boolean;
@@ -15,13 +13,12 @@ const SocketContext = createContext<SocketContextType>({
   isConnected: false,
 });
 
-// Custom hook to use the socket anywhere in your components
-export const useSocket = () => {
-  const context = useContext(SocketContext);
-  if (!context) {
-    throw new Error("useSocket must be used within a SocketProvider");
-  }
-  return context;
+const getCookie = (name: string) => {
+  if (typeof document === "undefined") return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+  return null;
 };
 
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
@@ -29,31 +26,36 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // 1. Initialize the server-side socket by hitting the API route
-    fetch("/api/socket").finally(() => {
-      // 2. Connect the client socket
-      const socketInstance = ClientIO({
-        path: "/api/socket",
-        addTrailingSlash: false,
-      });
+    const token = getCookie("socket-token");
 
-      // 3. Setup connection listeners using constants
-      socketInstance.on(SOCKET_EVENTS.CONNECT, () => {
-        console.log("Transmission Established");
-        setIsConnected(true);
-      });
+    if (!token) {
+      console.warn("⚠️ No socket-token found in cookies.");
+      return;
+    }
 
-      socketInstance.on(SOCKET_EVENTS.DISCONNECT, () => {
-        console.log("Transmission Lost");
-        setIsConnected(false);
-      });
-
-      setSocket(socketInstance);
+    // Initialize with 'auth' object
+    const socketInstance = ClientIO(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
+      transports: ["websocket"],
+      auth: { token } 
     });
 
-    // Cleanup on unmount
+    socketInstance.on("connect", () => {
+      console.log("✅ Connected to Server:", socketInstance.id);
+      setIsConnected(true);
+    });
+
+    socketInstance.on("connect_error", (err) => {
+      console.error("📋 Socket Auth Error:", err.message);
+    });
+
+    socketInstance.on("disconnect", () => {
+      setIsConnected(false);
+    });
+
+    setSocket(socketInstance);
+
     return () => {
-      if (socket) socket.disconnect();
+      socketInstance.disconnect();
     };
   }, []);
 
@@ -63,3 +65,5 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     </SocketContext.Provider>
   );
 };
+
+export const useSocket = () => useContext(SocketContext);
