@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from "react";
 import { Navbar } from "@/components/Navbar";
-import { SocketProvider } from "@/context/SocketContext";
 import { useKeyboardControls } from "@/hooks/useKeyboardControls";
 
 // Components
@@ -24,7 +23,7 @@ export default function DashboardPage() {
   useKeyboardControls(isChatOpen, !!selectedMode, closeChat, terminateSession);
 
   return (
-    <SocketProvider>
+   
       <div className="h-screen flex flex-col bg-app-bg text-app-text overflow-hidden transition-colors duration-300">
         <Navbar 
           user={{ firstName: "John", lastName: "Doe" }} 
@@ -55,6 +54,6 @@ export default function DashboardPage() {
           <ChatOverlay isOpen={isChatOpen} onClose={closeChat} />
         </main>
       </div>
-    </SocketProvider>
+    
   );
 }

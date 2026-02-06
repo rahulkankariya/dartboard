@@ -4,7 +4,6 @@ import { useState } from "react";
 // ❌ REMOVED 'Sidebar' from lucide-react to avoid clashing with your component
 import { X, MessageSquare } from "lucide-react"; 
 import { Navbar } from "@/components/Navbar";
-import { SocketProvider } from "@/context/SocketContext";
 import { User } from "@/types/chat";
 
 // ✅ Import your CUSTOM Sidebar component (ensure the path is correct)
@@ -23,7 +22,7 @@ export default function Home() {
   ];
 
   return (
-    <SocketProvider>
+
       <div className="min-h-screen bg-app-bg text-app-text">
         <Navbar 
           user={adminUser} 
@@ -62,6 +61,6 @@ export default function Home() {
           )}
         </main>
       </div>
-    </SocketProvider>
+
   );
 }
