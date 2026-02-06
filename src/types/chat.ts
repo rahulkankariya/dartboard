@@ -6,9 +6,9 @@ export interface Message {
 }
 
 export interface User {
-  id: string;
-  name: string;
-  lastMsg: string;
-  time: string;
+  _id: string;
+  fullName: string;
+  lastMessage: string;
+  lastMessageTime:string
   status: "online" | "offline";
 }

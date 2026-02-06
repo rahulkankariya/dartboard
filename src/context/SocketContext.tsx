@@ -2,15 +2,18 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { io as ClientIO, Socket } from "socket.io-client";
+import { User } from "@/types/chat"; // Ensure this import exists
 
 type SocketContextType = {
   socket: Socket | null;
   isConnected: boolean;
+  users: User[];
 };
 
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
+  users: [], // Default to empty array
 });
 
 const getCookie = (name: string) => {
@@ -24,6 +27,7 @@ const getCookie = (name: string) => {
 export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     const token = getCookie("socket-token");
@@ -33,7 +37,6 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Initialize with 'auth' object
     const socketInstance = ClientIO(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
       transports: ["websocket"],
       auth: { token } 
@@ -42,6 +45,15 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socketInstance.on("connect", () => {
       console.log("✅ Connected to Server:", socketInstance.id);
       setIsConnected(true);
+      // Trigger the initial user list fetch
+      socketInstance.emit("request-user-list", { pageIndex: 0, pageSize: 50 });
+    });
+
+    socketInstance.on("response-user-list", (response) => {
+      console.log("📋 Received User List:", response);
+      if (response.status === 200) {
+        setUsers(response.data);
+      }
     });
 
     socketInstance.on("connect_error", (err) => {
@@ -49,18 +61,21 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     socketInstance.on("disconnect", () => {
+      console.log("❌ Disconnected");
       setIsConnected(false);
     });
 
     setSocket(socketInstance);
 
     return () => {
+      socketInstance.off("response-user-list");
       socketInstance.disconnect();
     };
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    // IMPORTANT: You must pass users here for it to be accessible
+    <SocketContext.Provider value={{ socket, isConnected, users }}>
       {children}
     </SocketContext.Provider>
   );

@@ -34,9 +34,9 @@ export default function Sidebar({ users, selectedUserId, onSelectUser }: Sidebar
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {users.map((user) => (
           <UserItem 
-            key={user.id} 
+            key={user._id} 
             user={user} 
-            isActive={selectedUserId === user.id}
+            isActive={selectedUserId === user._id}
             onClick={() => onSelectUser(user)}
           />
         ))}
