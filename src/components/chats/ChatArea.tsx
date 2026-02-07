@@ -33,7 +33,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
          * Use Optional Chaining (?.) and nullish coalescing (??) 
          * to ensure we always have an array before calling .reverse()
          */
-        const incomingMessages = response?.data?.messageList ?? [];
+        const incomingMessages = response?.messageList ?? [];
         
         if (Array.isArray(incomingMessages)) {
           // Spread into a new array [...list] because .reverse() mutates the original
