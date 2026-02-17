@@ -52,13 +52,7 @@ function ChatContent({ onClose }: { onClose: () => void }) {
             </span>
           </div>
         </button>
-        <div className="flex items-center gap-4">
-          {/* Connection Indicator */}
-          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-          <div className="text-app-text/40">
-            <MessageSquare size={18} />
-          </div>
-        </div>
+      
       </div>
 
       {/* --- MAIN CHAT AREA --- */}
