@@ -24,11 +24,9 @@ export function ChatOverlay({
   );
 }
 
-// 2. The Content: This component sits INSIDE the Provider and can access the user list
+// 2. The Content: Sits inside Provider
 function ChatContent({ onClose }: { onClose: () => void }) {
-  // Get the real users and connection status from your SocketContext
-  const { users, isConnected } = useSocket(); 
-  console.log("📋 Users from Context:", users); // Debugging log to verify users are received
+  const { isConnected } = useSocket(); 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   return (
@@ -52,13 +50,17 @@ function ChatContent({ onClose }: { onClose: () => void }) {
             </span>
           </div>
         </button>
-      
+        <div className="flex items-center gap-4">
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <div className="text-app-text/40">
+            <MessageSquare size={18} />
+          </div>
+        </div>
       </div>
 
       {/* --- MAIN CHAT AREA --- */}
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
-          users={users} // REAL USERS FROM CONTEXT
           selectedUserId={selectedUser?._id}
           onSelectUser={setSelectedUser}
         />

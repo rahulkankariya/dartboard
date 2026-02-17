@@ -1,22 +1,36 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Search, ListFilter } from "lucide-react";
 import UserItem from "./UserItem";
 import { User } from "@/types/chat";
+import { useSocket } from "@/context/SocketContext"; // Import the hook
 
 interface SidebarProps {
-  users: User[];
   selectedUserId?: string;
   onSelectUser: (user: User) => void;
 }
 
-export default function Sidebar({ users, selectedUserId, onSelectUser }: SidebarProps) {
+export default function Sidebar({ selectedUserId, onSelectUser }: SidebarProps) {
+  // 1. Pull the live, synced users array from Context
+  const { users } = useSocket();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // 2. Filter users based on search input while keeping them sorted (sorting is handled in Context)
+  const filteredUsers = useMemo(() => {
+    return users.filter((user) =>
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
+
   return (
     <div className="w-80 h-full border-r border-app-border bg-app-bg flex flex-col">
       {/* Sidebar Top Bar */}
       <div className="p-4 border-b border-app-border bg-app-text/5">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs uppercase tracking-[0.2em] font-black text-app-accent">Active Transmissions</h2>
+          <h2 className="text-xs uppercase tracking-[0.2em] font-black text-app-accent">
+            Active Transmissions
+          </h2>
           <ListFilter size={14} className="text-app-text/40 cursor-pointer hover:text-app-accent" />
         </div>
         
@@ -25,21 +39,29 @@ export default function Sidebar({ users, selectedUserId, onSelectUser }: Sidebar
           <input 
             type="text" 
             placeholder="Search Protocol..." 
-            className="w-full bg-app-bg border border-app-border rounded-md py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-app-accent/50 transition-all"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-app-bg border border-app-border rounded-md py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-app-accent/50 transition-all text-app-text"
           />
         </div>
       </div>
 
       {/* User List Area */}
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {users.map((user) => (
-          <UserItem 
-            key={user._id} 
-            user={user} 
-            isActive={selectedUserId === user._id}
-            onClick={() => onSelectUser(user)}
-          />
-        ))}
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => (
+            <UserItem 
+              key={user._id} 
+              user={user} 
+              isActive={selectedUserId === user._id}
+              onClick={() => onSelectUser(user)}
+            />
+          ))
+        ) : (
+          <div className="p-8 text-center">
+            <p className="text-[10px] uppercase tracking-widest text-app-text/30">No Protocols Found</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { io as ClientIO, Socket } from "socket.io-client";
-import { User } from "@/types/chat"; // Ensure this import exists
+import { User, ChatMessage } from "@/types/chat";
+import { SOCKET_EVENTS } from "@/constants/socket-events";
 
 type SocketContextType = {
   socket: Socket | null;
@@ -13,7 +14,7 @@ type SocketContextType = {
 const SocketContext = createContext<SocketContextType>({
   socket: null,
   isConnected: false,
-  users: [], // Default to empty array
+  users: [],
 });
 
 const getCookie = (name: string) => {
@@ -29,13 +30,27 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
 
+  // Helper to update a single user in the list and optionally re-sort
+  const updateUserData = useCallback((userId: string, updates: Partial<User>, shouldSort = false) => {
+    setUsers((prevUsers) => {
+      const updatedList = prevUsers.map((user) =>
+        user._id === userId ? { ...user, ...updates } : user
+      );
+
+      if (shouldSort) {
+        return [...updatedList].sort((a, b) => {
+          const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+          const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+          return timeB - timeA;
+        });
+      }
+      return updatedList;
+    });
+  }, []);
+
   useEffect(() => {
     const token = getCookie("socket-token");
-
-    if (!token) {
-      console.warn("⚠️ No socket-token found in cookies.");
-      return;
-    }
+    if (!token) return;
 
     const socketInstance = ClientIO(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
       transports: ["websocket"],
@@ -43,38 +58,43 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     socketInstance.on("connect", () => {
-      console.log("✅ Connected to Server:", socketInstance.id);
       setIsConnected(true);
-      // Trigger the initial user list fetch
+      // Fetch initial sidebar list
       socketInstance.emit("request-chat-list", { pageIndex: 0, pageSize: 50 });
     });
 
+    // 1. Initial User List Load
     socketInstance.on("response-chat-list", (response) => {
-      console.log("📋 Received User List:", response);
-      if (response.status === 200) {
-        setUsers(response.data);
-      }
+      if (response.status === 200) setUsers(response.data);
     });
 
-    socketInstance.on("connect_error", (err) => {
-      console.error("📋 Socket Auth Error:", err.message);
+    // 2. Real-time Last Message Update (Incoming)
+    socketInstance.on(SOCKET_EVENTS.RECEIVE_MESSAGE, (newMessage: ChatMessage) => {
+      const senderId = typeof newMessage.sender === "string" ? newMessage.sender : newMessage.sender._id;
+      updateUserData(senderId, { lastMessage: newMessage as any }, true);
     });
 
-    socketInstance.on("disconnect", () => {
-      console.log("❌ Disconnected");
-      setIsConnected(false);
+    // 3. Real-time Last Message Update (Outgoing Success)
+    socketInstance.on(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, (sentMessage: ChatMessage) => {
+      const receiverId = (sentMessage as any).receiverId || (sentMessage as any).receiver;
+      updateUserData(receiverId, { lastMessage: sentMessage as any }, true);
     });
+
+    // 4. Online/Offline Presence Toggles
+   socketInstance.on("user-status-changed", (data: { userId: string, isOnline: boolean }) => {
+  updateUserData(data.userId, { isOnline: data.isOnline });
+});
+
+    socketInstance.on("disconnect", () => setIsConnected(false));
 
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.off("response-user-list");
       socketInstance.disconnect();
     };
-  }, []);
+  }, [updateUserData]);
 
   return (
-    // IMPORTANT: You must pass users here for it to be accessible
     <SocketContext.Provider value={{ socket, isConnected, users }}>
       {children}
     </SocketContext.Provider>
