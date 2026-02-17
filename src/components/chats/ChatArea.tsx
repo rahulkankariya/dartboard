@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSocket } from "@/context/SocketContext";
 import { SOCKET_EVENTS } from "@/constants/socket-events";
 import { User } from "@/types/chat";
-import { Send } from "lucide-react";
+import { Send, Check } from "lucide-react";
 
 export default function ChatArea({ activeUser }: { activeUser: User | null }) {
   const { socket } = useSocket();
@@ -14,57 +14,75 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
   useEffect(() => {
     if (!socket || !activeUser) return;
 
+    // Reset messages when user changes
     setMessages([]);
 
-    // 1. Request Chat History
-    socket.emit("request-chat-history", { 
-      chatId: activeUser._id, 
+    // 1. Fetch History
+    socket.emit(SOCKET_EVENTS.REQUEST_CHAT_HISTORY, {
+      receiverId: activeUser._id,
       pageIndex: 0,
-      pageSize: 50 
     });
 
-    // 2. Handle History Response with Defensive Logic
+    // 2. Event Handlers
     const handleHistory = (response: any) => {
-      console.log("Chat History Response:", response); // Debugging
-
-      if (response.status === 200 && response.chatId === activeUser._id) {
-        /**
-         * SAFETY CHECK: 
-         * Use Optional Chaining (?.) and nullish coalescing (??) 
-         * to ensure we always have an array before calling .reverse()
-         */
+      if (response.status === 200 && response.receiverId === activeUser._id) {
         const incomingMessages = response?.messageList ?? [];
-        
         if (Array.isArray(incomingMessages)) {
-          // Spread into a new array [...list] because .reverse() mutates the original
           setMessages([...incomingMessages].reverse());
-        } else {
-          console.error("Payload 'messageList' is not an array:", incomingMessages);
-          setMessages([]);
         }
       }
     };
 
-    const onReceive = (newMessage: any) => {
-      // Validate that message belongs to current conversation
-      if (newMessage.chatId === activeUser._id || newMessage.sender?._id === activeUser._id) {
-        setMessages((prev) => [...prev, newMessage]);
-      }
+    const handleNewMessage = (newMessage: any) => {
+      setMessages((prev) => {
+        // Prevent duplicates
+        if (prev.find((m) => m._id === newMessage._id)) return prev;
+
+        const mSenderId = newMessage.sender?._id || newMessage.sender;
+        const isFromActive = String(mSenderId) === String(activeUser._id);
+        const isFromMe = String(mSenderId) !== String(activeUser._id);
+
+        if (isFromActive || isFromMe) {
+          // If I am receiving a message right now, tell server I've read it
+          if (isFromActive) {
+            socket.emit(SOCKET_EVENTS.MARK_MESSAGE_READ, {
+              messageId: newMessage._id,
+              senderId: mSenderId
+            });
+          }
+          return [...prev, newMessage];
+        }
+        return prev;
+      });
     };
 
-    socket.on("response-message-list", handleHistory);
-    socket.on(SOCKET_EVENTS.RECEIVE_MESSAGE, onReceive);
-    
+    const handleStatusUpdate = (data: { messageId: string, status: string }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m._id === data.messageId ? { ...m, status: data.status } : m
+        )
+      );
+    };
+
+    // 3. Set up Listeners
+    socket.on(SOCKET_EVENTS.RESPONSE_MESSAGE_LIST, handleHistory);
+    socket.on(SOCKET_EVENTS.RECEIVE_MESSAGE, handleNewMessage);
+    socket.on(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, handleNewMessage);
+    socket.on(SOCKET_EVENTS.MESSAGE_STATUS_UPDATED, handleStatusUpdate);
+
+    // 4. Cleanup
     return () => {
-      socket.off("response-message-list", handleHistory);
-      socket.off(SOCKET_EVENTS.RECEIVE_MESSAGE, onReceive);
+      socket.off(SOCKET_EVENTS.RESPONSE_MESSAGE_LIST, handleHistory);
+      socket.off(SOCKET_EVENTS.RECEIVE_MESSAGE, handleNewMessage);
+      socket.off(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, handleNewMessage);
+      socket.off(SOCKET_EVENTS.MESSAGE_STATUS_UPDATED, handleStatusUpdate);
     };
   }, [socket, activeUser]);
 
+  // Auto-scroll logic
   useEffect(() => {
-    // Small timeout ensures the DOM has rendered the new message before scrolling
     const timer = setTimeout(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+      scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 100);
     return () => clearTimeout(timer);
   }, [messages]);
@@ -73,9 +91,9 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
     if (!input.trim() || !socket || !activeUser) return;
 
     const payload = {
-      chatId: activeUser._id, 
+      receiverId: activeUser._id,
       content: input,
-      type: 1, 
+      type: 1,
     };
 
     socket.emit(SOCKET_EVENTS.SEND_MESSAGE, payload);
@@ -86,6 +104,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-app-bg">
+      {/* Header */}
       <div className="p-4 border-b border-app-border flex items-center justify-between">
         <h2 className="text-sm font-bold text-app-accent uppercase tracking-widest">
           {activeUser.fullName}
@@ -93,19 +112,38 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
         <span className="text-[10px] opacity-40">● Online</span>
       </div>
 
+      {/* Message Feed */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
         {messages.map((m, i) => {
-          // Safety check for sender object
-          const isOwn = m.sender?._id !== activeUser._id; 
+          const mSenderId = m.sender?._id || m.sender;
+          const isOwn = String(mSenderId) !== String(activeUser._id);
+          const isRead = m.status === "read" || m.isRead === true;
+
           return (
             <div key={m._id || i} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-              <div className={`p-3 rounded-xl max-w-[75%] text-sm ${
+              <div className={`p-3 rounded-xl max-w-[75%] text-sm relative ${
                 isOwn ? "bg-app-accent text-white" : "bg-app-text/10 text-app-text"
               }`}>
                 {m.content}
-                <p className="text-[8px] mt-1 opacity-60 text-right">
-                  {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
-                </p>
+                
+                <div className="flex items-center justify-end gap-1 mt-1">
+                  <p className="text-[8px] opacity-60">
+                    {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  </p>
+                  
+                  {isOwn && (
+                    <div className="flex items-center ml-1">
+                      {isRead ? (
+                        <div className="flex -space-x-1.5">
+                          <Check size={11} strokeWidth={3} className="text-blue-400" />
+                          <Check size={11} strokeWidth={3} className="text-blue-400" />
+                        </div>
+                      ) : (
+                        <Check size={11} strokeWidth={2} className="text-white/50" />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -113,9 +151,10 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
         <div ref={scrollRef} />
       </div>
 
+      {/* Footer Input */}
       <div className="p-4 border-t border-app-border bg-app-bg flex gap-2">
         <input 
-          className="flex-1 bg-app-text/5 border border-app-border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-app-accent"
+          className="flex-1 bg-app-text/5 border border-app-border rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-app-accent text-app-text"
           placeholder={`Signal to ${activeUser.fullName}...`}
           value={input}
           onChange={(e) => setInput(e.target.value)}

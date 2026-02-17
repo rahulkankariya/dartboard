@@ -46,10 +46,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("✅ Connected to Server:", socketInstance.id);
       setIsConnected(true);
       // Trigger the initial user list fetch
-      socketInstance.emit("request-user-list", { pageIndex: 0, pageSize: 50 });
+      socketInstance.emit("request-chat-list", { pageIndex: 0, pageSize: 50 });
     });
 
-    socketInstance.on("response-user-list", (response) => {
+    socketInstance.on("response-chat-list", (response) => {
       console.log("📋 Received User List:", response);
       if (response.status === 200) {
         setUsers(response.data);
