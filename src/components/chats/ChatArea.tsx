@@ -13,8 +13,8 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
   const { socket } = useSocket();
   
   // Logic hook handles fetching history and real-time message syncing
-  const { messages, sendMessage } = useChat(socket, activeUser);
-
+  const { messages, sendMessage,loadMore, hasMore } = useChat(socket, activeUser);
+  // console.log("ChatArea Rendered with messages:", loadMore,hasMore);
   if (!activeUser) return <EmptyState />;
 
   return (
@@ -25,6 +25,8 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
       <MessageList 
         messages={messages} 
         activeUser={activeUser} 
+        onLoadMore={loadMore} // Missing property 1
+        hasMore={hasMore}     // Missing property 2
       />
 
       {/* Handles text input and socket emission */}

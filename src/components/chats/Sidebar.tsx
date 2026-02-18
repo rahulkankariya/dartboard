@@ -51,11 +51,10 @@ export default function Sidebar({ selectedUserId, onSelectUser }: SidebarProps) 
         {filteredUsers.length > 0 ? (
           filteredUsers.map((user) => (
             <UserItem 
-              key={user._id} 
-              user={user} 
+              key={user._id}
+              user={user}
               isActive={selectedUserId === user._id}
-              onClick={() => onSelectUser(user)}
-            />
+              onClick={() => onSelectUser(user)} currentUserId={""}            />
           ))
         ) : (
           <div className="p-8 text-center">
