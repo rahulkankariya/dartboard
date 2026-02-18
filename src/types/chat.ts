@@ -7,6 +7,7 @@ export interface User {
   lastName: string;
   isOnline: boolean;
   lastSeen: string;
+  unreadCount?:number
   // lastMessage can now be the message object or null
   lastMessage: {
     _id: string;

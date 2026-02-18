@@ -1,16 +1,43 @@
 "use client";
 import { User } from "@/types/chat";
 
-export default function UserItem({ user, isActive, onClick }: { user: User, isActive: boolean, onClick: () => void }) {
-  const lastMsg = user.lastMessage?.content;
-  const time = user.lastMessage?.createdAt 
-    ? new Date(user.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+interface UserItemProps {
+  user: User;
+  isActive: boolean;
+  onClick: () => void;
+  currentUserId: string; // Ensure this is passed from parent!
+}
+
+export default function UserItem({ user, isActive, onClick, currentUserId }: UserItemProps) {
+  const lastMessage = user.lastMessage;
+  
+  // Fix: Check if sender ID matches your ID
+  const isMe = lastMessage?.sender === currentUserId;
+  
+  // Fix: Use nullish coalescing to hide badge if count is 0
+  const unreadCount = user.unreadCount ?? 0;
+
+  const lastMsgContent = lastMessage?.content;
+  const displayMsg = lastMsgContent 
+    ? (isMe ? `You: ${lastMsgContent}` : lastMsgContent) 
+    : "No messages";
+
+  const time = lastMessage?.createdAt 
+    ? new Date(lastMessage.createdAt).toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      }) 
     : null;
 
   return (
-    <div onClick={onClick} className={`flex items-center p-4 cursor-pointer border-l-2 transition-all ${
-      isActive ? 'bg-app-accent/10 border-app-accent' : 'border-transparent hover:bg-app-text/5'
-    }`}>
+    <div 
+      onClick={onClick} 
+      className={`flex items-center p-4 cursor-pointer border-l-2 transition-all ${
+        isActive ? 'bg-app-accent/10 border-app-accent' : 'border-transparent hover:bg-app-text/5'
+      }`}
+    >
+      {/* Avatar Section */}
       <div className="relative shrink-0">
         <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-xs border ${
           isActive ? "bg-app-accent text-white" : "bg-app-accent/10 text-app-accent"
@@ -21,12 +48,31 @@ export default function UserItem({ user, isActive, onClick }: { user: User, isAc
           user.isOnline ? "bg-emerald-500" : "bg-rose-500"
         }`} />
       </div>
+
+      {/* Content Section */}
       <div className="ml-3 flex-1 overflow-hidden">
         <div className="flex justify-between items-baseline">
           <p className="text-sm font-medium truncate">{user.fullName}</p>
-          {time && <span className="text-[9px] opacity-40 font-mono">{time}</span>}
+          {time && (
+            <span className="text-[10px] opacity-40 font-mono shrink-0 ml-2">
+              {time}
+            </span>
+          )}
         </div>
-        <p className="text-[11px] truncate opacity-50">{lastMsg || "No messages"}</p>
+        
+        <div className="flex justify-between items-center mt-0.5">
+          <p className={`text-[11px] truncate flex-1 ${
+            unreadCount > 0 && !isActive ? "text-app-text font-semibold opacity-90" : "opacity-50"
+          }`}>
+            {displayMsg}
+          </p>
+          
+          {unreadCount > 0 && (
+            <span className="ml-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-app-accent px-1 text-[9px] font-bold text-white">
+              {unreadCount}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
