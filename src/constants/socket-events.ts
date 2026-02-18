@@ -1,19 +1,42 @@
+/**
+ * SOCKET_EVENTS
+ * Central source of truth for all real-time communication events.
+ * Use these constants to prevent typos and ensure sync between FE and BE.
+ */
 export const SOCKET_EVENTS = {
-  // Connection events
-  CONNECT: "connection",
+  // --- CONNECTION & PRESENCE ---
+  CONNECT: "connect",
   DISCONNECT: "disconnect",
+  USER_STATUS_CHANGED: "user-status-changed", // Handled online/offline/last-seen
 
-  // Message events
-  SEND_MESSAGE: "send-message",
-  RECEIVE_MESSAGE: "receive-message",
-  MESSAGE_SENT_SUCCESS: "message-sent-success",
-  
-  // History and Status events
-  REQUEST_CHAT_HISTORY: "request-chat-history",
-  RESPONSE_MESSAGE_LIST: "response-message-list",
-  MARK_MESSAGE_READ: "mark-message-read",
-  MESSAGE_STATUS_UPDATED: "message-status-updated",
+  // --- SIDEBAR & CHAT LIST ---
+  REQUEST_CHAT_LIST: "request-chat-list",   // Client asks for sidebar users
+  RESPONSE_CHAT_LIST: "response-chat-list", // Server sends sidebar users
 
-  // UI events
-  USER_TYPING: "user-typing",
+  // --- MESSAGE HISTORY ---
+  REQUEST_CHAT_HISTORY: "request-chat-history",   // Client asks for messages in a chat
+  RESPONSE_MESSAGE_LIST: "response-message-list", // Server sends message history
+
+  // --- SENDING & RECEIVING ---
+  SEND_MESSAGE: "send-message",         // Client sends a new message
+  RECEIVE_MESSAGE: "receive-message",   // Server delivers a message to the recipient
+  MESSAGE_SENT_SUCCESS: "message-sent-success", // Server confirms to sender (1 Gray Check)
+  SEND_MESSAGE_ERROR: "send-message-error",     // Server tells sender it failed
+
+  // --- WHATSAPP-STYLE STATUS UPDATES ---
+  // 2nd Gray Check (Delivered to device)
+  CONFIRM_DELIVERY_BULK: "confirm-delivery-bulk",
+  MESSAGES_DELIVERED_BULK: "messages-delivered-bulk",
+
+  // Blue Checks (Read/Seen)
+  MARK_CHAT_READ: "mark-chat-read",             // Client opens chat/scrolls to bottom
+  USER_READ_YOUR_MESSAGES: "user-read-your-messages", // Sender gets the blue check update
+
+  // --- TYPING INDICATORS ---
+  TYPING_START: "typing-start", // Client starts typing
+  TYPING_STOP: "typing-stop",   // Client stops typing (timer ends)
+  USER_TYPING: "user-typing",   // Server relays typing state to the other user
 } as const;
+
+// Optional: Type-safe Helper for TypeScript
+export type SocketEventType = typeof SOCKET_EVENTS[keyof typeof SOCKET_EVENTS];

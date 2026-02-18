@@ -1,5 +1,9 @@
 // src/types/chat.ts
-
+export interface MessageReadStatus {
+  user: string;
+  readAt: string | null;
+  deliveredAt?: string | null; // Optional, for double gray checks
+}
 export interface User {
   _id: string;
   fullName: string;
@@ -8,6 +12,8 @@ export interface User {
   isOnline: boolean;
   lastSeen: string;
   unreadCount?:number
+  isTyping?: boolean;
+  
   // lastMessage can now be the message object or null
   lastMessage: {
     _id: string;
@@ -24,4 +30,5 @@ export interface ChatMessage {
   status?: string;
   isRead?: boolean;
   createdAt?: string;
+  readStatus: MessageReadStatus[];
 }
