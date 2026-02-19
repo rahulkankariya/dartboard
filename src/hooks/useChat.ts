@@ -106,14 +106,43 @@ export const useChat = (socket: any, activeUser: any) => {
       }
     };
 
+    const handleStatusUpdate = (data: any) => {
+      setMessages((prev) => {
+        // 1. Create a brand new array reference
+        return prev.map((m) => {
+          // 2. Normalize ID comparison (ensure both are strings)
+          const isCorrectChat = String(m.chatId) === String(data.chatId);
+
+          if (isCorrectChat && m.status !== "seen") {
+            console.log("Updating message status to 'seen' for chatId:", m,
+            );
+            // 3. Return a brand new object reference
+            return {
+              ...m,
+              status: "seen",
+              readStatus: m.readStatus?.map((rs: any) => 
+            String(rs.user) === String(data.userId) 
+              ? { ...rs, readAt: new Date().toISOString() } 
+              : rs
+          ),
+              // Update any other fields the UI specifically listens to
+            };
+          }
+          return m;
+        });
+      });
+    };
+
     socket.on(SOCKET_EVENTS.RESPONSE_MESSAGE_LIST, handleHistory);
     socket.on(SOCKET_EVENTS.RECEIVE_MESSAGE, handleNewMessage);
     socket.on(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, handleNewMessage);
+    socket.on(SOCKET_EVENTS.MESSAGE_STATUS_UPDATE, handleStatusUpdate);
 
     return () => {
       socket.off(SOCKET_EVENTS.RESPONSE_MESSAGE_LIST, handleHistory);
       socket.off(SOCKET_EVENTS.RECEIVE_MESSAGE, handleNewMessage);
       socket.off(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, handleNewMessage);
+      socket.off(SOCKET_EVENTS.MESSAGE_STATUS_UPDATE, handleStatusUpdate);
     };
   }, [socket, activeUser?._id]);
 

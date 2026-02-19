@@ -1,24 +1,27 @@
 "use client";
 import { memo } from "react";
 import { Check } from "lucide-react";
-import { ChatMessage } from "@/types/chat";
 
 interface MessageItemProps {
-  msg: any; // Or ChatMessage if your types are strictly defined
+  msg: any;
   isOwn: boolean;
-  activeUserId: string; // Updated to match the prop you're passing
+  activeUserId: string; 
 }
 
 const MessageItem = memo(({ msg, isOwn, activeUserId }: MessageItemProps) => {
   
-  // Logic: The "recipient" is the activeUser (the person we are chatting with)
-  // We look for their ID in the readStatus array
+  // 1. Find the specific status for the person we are chatting with
   const recipientStatus = msg.readStatus?.find(
     (status: any) => String(status.user) === String(activeUserId)
   );
 
-  const isRead = !!recipientStatus?.readAt;
-  const isDelivered = !!recipientStatus?.deliveredAt;
+  // 2. Logic: Priority given to msg.status updated by the socket hook
+  const isRead = msg.status === "seen" || !!recipientStatus?.readAt;
+  
+  const isDelivered = 
+    msg.status === "seen" || 
+    msg.status === "delivered" || 
+    !!recipientStatus?.deliveredAt;
 
   const formatTime = (dateString?: string) => {
     if (!dateString) return "--:--";
@@ -44,16 +47,19 @@ const MessageItem = memo(({ msg, isOwn, activeUserId }: MessageItemProps) => {
           {isOwn && (
             <div className="flex items-center ml-0.5">
               {isRead ? (
+                /* Blue double check */
                 <div className="flex -space-x-1.5">
                   <Check size={11} strokeWidth={4} className="text-blue-400" />
                   <Check size={11} strokeWidth={4} className="text-blue-400" />
                 </div>
               ) : isDelivered ? (
+                /* Gray double check */
                 <div className="flex -space-x-1.5">
                   <Check size={11} strokeWidth={3} className="opacity-70" />
                   <Check size={11} strokeWidth={3} className="opacity-70" />
                 </div>
               ) : (
+                /* Single check (Sent) */
                 <Check size={11} strokeWidth={2} className="opacity-40" />
               )}
             </div>

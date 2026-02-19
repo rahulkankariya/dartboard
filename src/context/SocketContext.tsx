@@ -111,8 +111,13 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       updateUserData(userId, { unreadCount: 0 }, false);
     });
 
+   
+
     socketInstance.on(SOCKET_EVENTS.USER_STATUS_CHANGED, (data) => {
       updateUserData(data.userId, { isOnline: data.isOnline }, false);
+      if (data.isOnline) {
+        socketInstance.emit(SOCKET_EVENTS.REQUEST_USER_LIST, { pageIndex: 0, pageSize: 50 });
+      }
     });
 
     socketInstance.on(SOCKET_EVENTS.DISCONNECT, () => setIsConnected(false));
