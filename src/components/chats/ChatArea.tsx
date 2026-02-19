@@ -10,6 +10,7 @@ import MessageList from "./MessageList";
 import MessageInput from "./MessageInput";
 import EmptyState from "./EmptyState";
 import { MESSAGE_TYPES } from "@/constants/chat";
+import { toast } from "sonner";
 
 export default function ChatArea({ activeUser }: { activeUser: User | null }) {
   const { socket } = useSocket();
@@ -49,6 +50,49 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
       console.error("Voice Upload Error:", error);
     }
   };
+   const handleSendFile = async (file: File, type: "image" | "video" | "file") => {
+  try {
+    // Generate a unique filename using the original extension
+    const extension = file.name.split('.').pop();
+    const fileName = `${type}-${Date.now()}.${extension}`;
+
+    // 1. Upload the file to your server
+    const result = await uploadMedia(file, fileName);
+
+    if (result.success) {
+      console.log(`${type} upload successful:`, result);
+
+      // 2. Get the raw path and clean it
+      const rawPath = result.data[0].path;
+      const API_BASE = "http://localhost:5000";
+      const cleanPath = rawPath.replace(/\\/g, "/");
+      
+      // 3. Build the final reachable URL
+      const finalUrl = `${API_BASE}${cleanPath}`;
+
+      console.log(`FINAL ${type.toUpperCase()} URL:`, finalUrl);
+
+      // 4. Map the internal 'file' type to your MESSAGE_TYPES constant
+      let messageType;
+      switch (type) {
+        case "image":
+          messageType = MESSAGE_TYPES.IMAGE;
+          break;
+        case "video":
+          messageType = MESSAGE_TYPES.VIDEO;
+          break;
+        default:
+          messageType = MESSAGE_TYPES.FILE;
+      }
+
+      // 5. Send to socket/API
+      sendMessage(finalUrl, messageType);
+    }
+  } catch (error) {
+    console.error(`${type} Upload Error:`, error);
+    toast.error(`Failed to upload ${type}`);
+  }
+};
 
   if (!activeUser) return <EmptyState />;
 
@@ -64,6 +108,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
       <MessageInput
         onSend={(val) => sendMessage(val, MESSAGE_TYPES.TEXT)}
         onSendVoice={handleSendVoice}
+        onSendFile={handleSendFile}
         placeholder={`Secure channel to ${activeUser.fullName.split(" ")[0]}...`}
       />
     </div>
