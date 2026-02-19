@@ -29,9 +29,8 @@ export const SOCKET_EVENTS = {
   MESSAGES_DELIVERED_BULK: "messages-delivered-bulk",
 
   // Blue Checks (Read/Seen)
-  MARK_CHAT_READ: "mark-chat-read",             // Client opens chat/scrolls to bottom
-  USER_READ_YOUR_MESSAGES: "user-read-your-messages", // Sender gets the blue check update
-
+  MARK_MESSAGE_READ: "mark-message-read",             // Client opens chat/scrolls to bottom
+    
   // --- TYPING INDICATORS ---
   TYPING_START: "typing-start", // Client starts typing
   TYPING_STOP: "typing-stop",   // Client stops typing (timer ends)

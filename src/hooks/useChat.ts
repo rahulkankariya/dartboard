@@ -81,34 +81,34 @@ export const useChat = (socket: any, activeUser: any) => {
     };
 
     const handleNewMessage = (msg: any) => {
- 
+      
       // 1. Identify Sender safely
       const senderId =
         typeof msg.sender === "object" ? msg.sender._id : msg.sender;
 
       // 2. Identify Receiver from readStatus
-      // (In your JSON, the second element in readStatus is usually the recipient)
       const receiverId = msg.readStatus?.find(
         (status: any) => status.user !== senderId,
       )?.user;
 
       // 3. Relevance Check
-      // The message is relevant if the sender is the person I'm talking to (Incoming)
-      // OR if I sent the message to the person I'm talking to (Outgoing)
+      // Is the message from the active chat or sent to the active chat?
       const isRelevant =
         senderId === activeUser?._id || receiverId === activeUser?._id;
 
       if (isRelevant) {
         setMessages((prev) => {
+          // Prevent duplicate messages in state
           if (prev.some((m) => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
 
-        // 4. Auto-Read Emission
+        // 4. Auto-Read Logic (SEEN STATUS)
+        // If the sender is the person I'm currently chatting with, mark it as read immediately
         if (senderId === activeUser?._id) {
-          socket.emit(SOCKET_EVENTS.MARK_CHAT_READ, {
-            senderId: activeUser._id,
-            chatId: msg.chatId, // Passing chatId helps the backend find the record faster
+          socket.emit(SOCKET_EVENTS.MARK_MESSAGE_READ, {
+            senderId: senderId, // The person who sent the message
+            chatId: msg.chatId,
           });
         }
       }
