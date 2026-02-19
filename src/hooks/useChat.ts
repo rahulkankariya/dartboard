@@ -19,8 +19,6 @@ export const useChat = (socket: any, activeUser: any) => {
         content: content.trim(),
         type: 1, // Represents MESSAGE_TYPES.TEXT
       });
-
-      // B. WhatsApp Logic: Immediately stop typing status when message is sent
       socket.emit(SOCKET_EVENTS.TYPING_STOP, { receiverId: activeUser._id });
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     },
@@ -83,6 +81,7 @@ export const useChat = (socket: any, activeUser: any) => {
     };
 
     const handleNewMessage = (msg: any) => {
+      console.log("Received new message:", msg);
       // 1. Identify Sender safely
       const senderId =
         typeof msg.sender === "object" ? msg.sender._id : msg.sender;
