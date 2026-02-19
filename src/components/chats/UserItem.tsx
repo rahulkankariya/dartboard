@@ -15,7 +15,7 @@ export default function UserItem({ user, isActive, onClick, currentUserId }: Use
   const isMe = lastMessage?.sender === currentUserId;
   
   // Fix: Use nullish coalescing to hide badge if count is 0
-  const unreadCount = user.unreadCount ?? 0;
+  const unreadCount = user.unreadCount ?? 10;
 
   const lastMsgContent = lastMessage?.content;
   const displayMsg = lastMsgContent 
