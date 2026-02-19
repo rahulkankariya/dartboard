@@ -114,19 +114,24 @@ export const useChat = (socket: any, activeUser: any) => {
           const isCorrectChat = String(m.chatId) === String(data.chatId);
 
           if (isCorrectChat && m.status !== "seen") {
-            console.log("Updating message status to 'seen' for chatId:", m,
-            );
-            // 3. Return a brand new object reference
-            return {
+            if (data.status === "seen" && m.status !== "seen") {
+              console.log("Triggered SEEN logic");
+               return {
               ...m,
               status: "seen",
-              readStatus: m.readStatus?.map((rs: any) => 
-            String(rs.user) === String(data.userId) 
-              ? { ...rs, readAt: new Date().toISOString() } 
-              : rs
-          ),
               // Update any other fields the UI specifically listens to
             };
+            }
+            if (data.status === "delivered" && m.status === "sent") {
+              console.log("Triggered DELIVERED logic");
+               return {
+              ...m,
+              status: "delivered",
+              // Update any other fields the UI specifically listens to
+            };
+            }
+            // 3. Return a brand new object reference
+          
           }
           return m;
         });
