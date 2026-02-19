@@ -8,16 +8,15 @@ export const useChat = (socket: any, activeUser: any) => {
   const [isLoading, setIsLoading] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- 1. RESTORED SEND MESSAGE LOGIC ---
+  // --- 1. SEND MESSAGE ---
   const sendMessage = useCallback(
     (content: string) => {
       if (!content.trim() || !socket || !activeUser) return;
 
-      // A. Send the actual message
       socket.emit(SOCKET_EVENTS.SEND_MESSAGE, {
         receiverId: activeUser._id,
         content: content.trim(),
-        type: 1, // Represents MESSAGE_TYPES.TEXT
+        type: 1,
       });
       socket.emit(SOCKET_EVENTS.TYPING_STOP, { receiverId: activeUser._id });
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -25,7 +24,7 @@ export const useChat = (socket: any, activeUser: any) => {
     [socket, activeUser],
   );
 
-  // --- 2. LOAD MORE (Pagination) ---
+  // --- 2. LOAD MORE ---
   const loadMore = useCallback(() => {
     if (
       isLoading ||
@@ -38,7 +37,6 @@ export const useChat = (socket: any, activeUser: any) => {
 
     setIsLoading(true);
     const nextPage = page + 1;
-
     socket.emit(SOCKET_EVENTS.REQUEST_MESSAGE_LIST, {
       receiverId: activeUser._id,
       pageIndex: nextPage,
@@ -50,30 +48,31 @@ export const useChat = (socket: any, activeUser: any) => {
   useEffect(() => {
     if (!socket || !activeUser?._id) return;
 
-    // Reset state for new chat
+    // A. Reset & Initial Fetch
     setMessages([]);
     setPage(0);
     setHasMore(true);
     setIsLoading(true);
 
-    // Initial Fetch
     socket.emit(SOCKET_EVENTS.REQUEST_MESSAGE_LIST, {
       receiverId: activeUser._id,
       pageIndex: 0,
+    });
+
+    // B. MARK ENTIRE CHAT AS READ ON ENTRY
+    // This clears existing unread counts when you click the user
+    socket.emit(SOCKET_EVENTS.MARK_MESSAGE_READ, {
+      senderId: activeUser._id,
     });
 
     const handleHistory = (response: any) => {
       if (response.status === 200) {
         const incoming = response.messageList || [];
         const pagin = response.pagination;
-
-        if (pagin) {
-          setHasMore(pagin.page <= pagin.pages);
-        }
+        if (pagin) setHasMore(pagin.page < pagin.pages);
 
         setMessages((prev) => {
           const combined = [...incoming, ...prev];
-          // Deduplicate by _id
           return Array.from(new Map(combined.map((m) => [m._id, m])).values());
         });
       }
@@ -81,33 +80,26 @@ export const useChat = (socket: any, activeUser: any) => {
     };
 
     const handleNewMessage = (msg: any) => {
-      
-      // 1. Identify Sender safely
       const senderId =
         typeof msg.sender === "object" ? msg.sender._id : msg.sender;
 
-      // 2. Identify Receiver from readStatus
-      const receiverId = msg.readStatus?.find(
-        (status: any) => status.user !== senderId,
-      )?.user;
+      // Determine if message belongs to this conversation
+      const isFromActiveUser = senderId === activeUser._id;
+      const isToActiveUser =
+        msg.receiverId === activeUser._id ||
+        (typeof msg.receiver === "object" &&
+          msg.receiver._id === activeUser._id);
 
-      // 3. Relevance Check
-      // Is the message from the active chat or sent to the active chat?
-      const isRelevant =
-        senderId === activeUser?._id || receiverId === activeUser?._id;
-
-      if (isRelevant) {
+      if (isFromActiveUser || isToActiveUser) {
         setMessages((prev) => {
-          // Prevent duplicate messages in state
           if (prev.some((m) => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
 
-        // 4. Auto-Read Logic (SEEN STATUS)
-        // If the sender is the person I'm currently chatting with, mark it as read immediately
-        if (senderId === activeUser?._id) {
+        // C. AUTO-READ IF I AM LOOKING AT THE CHAT
+        if (isFromActiveUser) {
           socket.emit(SOCKET_EVENTS.MARK_MESSAGE_READ, {
-            senderId: senderId, // The person who sent the message
+            senderId: senderId,
             chatId: msg.chatId,
           });
         }

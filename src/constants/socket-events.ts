@@ -23,14 +23,11 @@ export const SOCKET_EVENTS = {
   MESSAGE_SENT_SUCCESS: "message-sent-success", // Server confirms to sender (1 Gray Check)
   SEND_MESSAGE_ERROR: "send-message-error",     // Server tells sender it failed
 
-  // --- WHATSAPP-STYLE STATUS UPDATES ---
-  // 2nd Gray Check (Delivered to device)
-  CONFIRM_DELIVERY_BULK: "confirm-delivery-bulk",
-  MESSAGES_DELIVERED_BULK: "messages-delivered-bulk",
+
 
   // Blue Checks (Read/Seen)
   MARK_MESSAGE_READ: "mark-message-read",             // Client opens chat/scrolls to bottom
-    
+MESSAGE_READ_SUCCESS: "message-read-success",
   // --- TYPING INDICATORS ---
   TYPING_START: "typing-start", // Client starts typing
   TYPING_STOP: "typing-stop",   // Client stops typing (timer ends)

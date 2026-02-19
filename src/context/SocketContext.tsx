@@ -1,5 +1,4 @@
 "use client";
-
 import React, {
   createContext,
   useContext,
@@ -36,31 +35,25 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
 
-  // --- FIXED HELPER ---
-  // Ensures lastMessage is preserved during status updates
   const updateUserData = useCallback(
     (userId: string, updates: Partial<User>, shouldMoveToTop = false) => {
       setUsers((prevUsers) => {
         const userIndex = prevUsers.findIndex((u) => u._id === userId);
-
         if (userIndex === -1) return prevUsers;
 
         const updatedList = [...prevUsers];
         const currentUser = updatedList[userIndex];
 
-        // Merge updates carefully to avoid wiping out the message preview
         const updatedUser: User = {
           ...currentUser,
           ...updates,
-          // If updates contains a message, use it. Otherwise, keep the old one.
-          lastMessage: updates.lastMessage 
+          lastMessage: updates.lastMessage
             ? {
                 ...updates.lastMessage,
-                createdAt: updates.lastMessage?.createdAt || new Date().toISOString(),
+                createdAt:
+                  updates.lastMessage?.createdAt || new Date().toISOString(),
               }
             : currentUser.lastMessage,
-          // Ensure online status is explicitly handled
-          isOnline: updates.isOnline !== undefined ? updates.isOnline : currentUser.isOnline,
         };
 
         if (shouldMoveToTop) {
@@ -72,7 +65,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
         }
       });
     },
-    []
+    [],
   );
 
   useEffect(() => {
@@ -81,11 +74,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     const socketInstance = ClientIO(
       process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
-      {
-        transports: ["websocket"],
-        auth: { token },
-        upgrade: false,
-      }
+      { transports: ["websocket"], auth: { token } },
     );
 
     socketInstance.on(SOCKET_EVENTS.CONNECT, () => {
@@ -96,54 +85,41 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       });
     });
 
-    // 1. Initial Load
-    socketInstance.on(SOCKET_EVENTS.RESPONSE_USER_LIST, (response) => {
-      if (response.status === 200) {
-        setUsers(response.data);
-      }
+    socketInstance.on(SOCKET_EVENTS.RESPONSE_USER_LIST, (res) => {
+      if (res.status === 200) setUsers(res.data);
     });
 
-    // 2. Incoming Messages
-    socketInstance.on(
-      SOCKET_EVENTS.RECEIVE_MESSAGE,
-      (newMessage: ChatMessage) => {
-        const senderId =
-          typeof newMessage.sender === "string"
-            ? newMessage.sender
-            : newMessage.sender._id;
+    socketInstance.on(SOCKET_EVENTS.RECEIVE_MESSAGE, (msg: ChatMessage) => {
+      const senderId =
+        typeof msg.sender === "string" ? msg.sender : msg.sender._id;
+      // When receiving, we also want to increment unread count if logic is handled client-side
+      updateUserData(senderId, { lastMessage: msg as any }, true);
+    });
 
-        updateUserData(senderId, { lastMessage: newMessage as any }, true);
-      }
-    );
-
-    // 3. Outgoing Messages
     socketInstance.on(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, (response: any) => {
       const msg = response.message || response;
-      const receiverId = msg.receiverId || (typeof msg.receiver === 'string' ? msg.receiver : msg.receiver?._id);
-      
-      if (receiverId) {
-        updateUserData(receiverId, { lastMessage: msg }, true);
-      }
+      const receiverId =
+        msg.receiverId ||
+        (typeof msg.receiver === "string" ? msg.receiver : msg.receiver?._id);
+      if (receiverId) updateUserData(receiverId, { lastMessage: msg }, true);
     });
 
-    // 4. Presence (Status Change)
-    socketInstance.on(
-      SOCKET_EVENTS.USER_STATUS_CHANGED,
-      (data: { userId: string; isOnline: boolean }) => {
-        // false here ensures the user stays in their current list position
-        updateUserData(data.userId, { isOnline: data.isOnline }, false);
-      }
-    );
+    // --- FIX: LISTEN FOR READ STATUS UPDATES ---
+    socketInstance.on(SOCKET_EVENTS.MESSAGE_READ_SUCCESS, (data: any) => {
+      // The backend should return the ID of the user whose messages were read
+      const userId = data.senderId || data.userId;
+      updateUserData(userId, { unreadCount: 0 }, false);
+    });
+
+    socketInstance.on(SOCKET_EVENTS.USER_STATUS_CHANGED, (data) => {
+      updateUserData(data.userId, { isOnline: data.isOnline }, false);
+    });
 
     socketInstance.on(SOCKET_EVENTS.DISCONNECT, () => setIsConnected(false));
-
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.off(SOCKET_EVENTS.RESPONSE_USER_LIST);
-      socketInstance.off(SOCKET_EVENTS.RECEIVE_MESSAGE);
-      socketInstance.off(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS);
-      socketInstance.off(SOCKET_EVENTS.USER_STATUS_CHANGED);
+      socketInstance.removeAllListeners();
       socketInstance.disconnect();
     };
   }, [updateUserData]);
