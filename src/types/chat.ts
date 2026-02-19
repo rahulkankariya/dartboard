@@ -31,4 +31,5 @@ export interface ChatMessage {
   isRead?: boolean;
   createdAt?: string;
   readStatus: MessageReadStatus[];
+  receiverId: string;
 }

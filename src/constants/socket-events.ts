@@ -10,11 +10,11 @@ export const SOCKET_EVENTS = {
   USER_STATUS_CHANGED: "user-status-changed", // Handled online/offline/last-seen
 
   // --- SIDEBAR & CHAT LIST ---
-  REQUEST_CHAT_LIST: "request-chat-list",   // Client asks for sidebar users
-  RESPONSE_CHAT_LIST: "response-chat-list", // Server sends sidebar users
+  REQUEST_USER_LIST: "request-user-list",   // Client asks for sidebar users
+  RESPONSE_USER_LIST: "response-user-list", // Server sends sidebar users
 
   // --- MESSAGE HISTORY ---
-  REQUEST_CHAT_HISTORY: "request-chat-history",   // Client asks for messages in a chat
+  REQUEST_MESSAGE_LIST: "request-message-history",   // Client asks for messages in a chat
   RESPONSE_MESSAGE_LIST: "response-message-list", // Server sends message history
 
   // --- SENDING & RECEIVING ---

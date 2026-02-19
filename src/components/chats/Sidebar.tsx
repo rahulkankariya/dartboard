@@ -33,7 +33,7 @@ export default function Sidebar({ selectedUserId, onSelectUser }: SidebarProps) 
           <Search className="absolute left-3 top-2.5 text-app-text/30" size={14} />
           <input 
             type="text" 
-            placeholder="Search Protocol..." 
+            placeholder="Search Name..." 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-app-bg border border-app-border rounded-md py-2 pl-9 pr-4 text-xs focus:outline-none focus:border-app-accent/50 transition-all text-app-text"
@@ -53,7 +53,7 @@ export default function Sidebar({ selectedUserId, onSelectUser }: SidebarProps) 
           ))
         ) : (
           <div className="p-8 text-center">
-            <p className="text-[10px] uppercase tracking-widest text-app-text/30">No Protocols Found</p>
+            <p className="text-[10px] uppercase tracking-widest text-app-text/30">No Data Found</p>
           </div>
         )}
       </div>

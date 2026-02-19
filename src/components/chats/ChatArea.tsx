@@ -21,12 +21,12 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
     <div className="flex-1 flex flex-col h-full bg-app-bg border-l border-app-border overflow-hidden">
       <ChatHeader user={activeUser} />
 
-      {/* Renders the scrollable message thread */}
+    
       <MessageList 
         messages={messages} 
         activeUser={activeUser} 
-        onLoadMore={loadMore} // Missing property 1
-        hasMore={hasMore}     // Missing property 2
+        onLoadMore={loadMore} 
+        hasMore={hasMore}    
       />
 
       {/* Handles text input and socket emission */}

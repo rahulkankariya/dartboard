@@ -39,7 +39,7 @@ export const useChat = (socket: any, activeUser: any) => {
     setIsLoading(true);
     const nextPage = page + 1;
 
-    socket.emit(SOCKET_EVENTS.REQUEST_CHAT_HISTORY, {
+    socket.emit(SOCKET_EVENTS.REQUEST_MESSAGE_LIST, {
       receiverId: activeUser._id,
       pageIndex: nextPage,
     });
@@ -57,7 +57,7 @@ export const useChat = (socket: any, activeUser: any) => {
     setIsLoading(true);
 
     // Initial Fetch
-    socket.emit(SOCKET_EVENTS.REQUEST_CHAT_HISTORY, {
+    socket.emit(SOCKET_EVENTS.REQUEST_MESSAGE_LIST, {
       receiverId: activeUser._id,
       pageIndex: 0,
     });
@@ -81,7 +81,7 @@ export const useChat = (socket: any, activeUser: any) => {
     };
 
     const handleNewMessage = (msg: any) => {
-      console.log("Received new message:", msg);
+ 
       // 1. Identify Sender safely
       const senderId =
         typeof msg.sender === "object" ? msg.sender._id : msg.sender;

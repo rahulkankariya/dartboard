@@ -36,29 +36,43 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
 
-  // Helper to update a single user in the list and optionally re-sort
+  // --- FIXED HELPER ---
+  // Ensures lastMessage is preserved during status updates
   const updateUserData = useCallback(
-    (userId: string, updates: Partial<User>, shouldSort = false) => {
+    (userId: string, updates: Partial<User>, shouldMoveToTop = false) => {
       setUsers((prevUsers) => {
-        const updatedList = prevUsers.map((user) =>
-          user._id === userId ? { ...user, ...updates } : user,
-        );
+        const userIndex = prevUsers.findIndex((u) => u._id === userId);
 
-        if (shouldSort) {
-          return [...updatedList].sort((a, b) => {
-            const timeA = a.lastMessage?.createdAt
-              ? new Date(a.lastMessage.createdAt).getTime()
-              : 0;
-            const timeB = b.lastMessage?.createdAt
-              ? new Date(b.lastMessage.createdAt).getTime()
-              : 0;
-            return timeB - timeA;
-          });
+        if (userIndex === -1) return prevUsers;
+
+        const updatedList = [...prevUsers];
+        const currentUser = updatedList[userIndex];
+
+        // Merge updates carefully to avoid wiping out the message preview
+        const updatedUser: User = {
+          ...currentUser,
+          ...updates,
+          // If updates contains a message, use it. Otherwise, keep the old one.
+          lastMessage: updates.lastMessage 
+            ? {
+                ...updates.lastMessage,
+                createdAt: updates.lastMessage?.createdAt || new Date().toISOString(),
+              }
+            : currentUser.lastMessage,
+          // Ensure online status is explicitly handled
+          isOnline: updates.isOnline !== undefined ? updates.isOnline : currentUser.isOnline,
+        };
+
+        if (shouldMoveToTop) {
+          updatedList.splice(userIndex, 1);
+          return [updatedUser, ...updatedList];
+        } else {
+          updatedList[userIndex] = updatedUser;
+          return updatedList;
         }
-        return updatedList;
       });
     },
-    [],
+    []
   );
 
   useEffect(() => {
@@ -70,21 +84,25 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
       {
         transports: ["websocket"],
         auth: { token },
-      },
+      }
     );
 
-    socketInstance.on("connect", () => {
+    socketInstance.on(SOCKET_EVENTS.CONNECT, () => {
       setIsConnected(true);
-      // Fetch initial sidebar list
-      socketInstance.emit("request-chat-list", { pageIndex: 0, pageSize: 50 });
+      socketInstance.emit(SOCKET_EVENTS.REQUEST_USER_LIST, {
+        pageIndex: 0,
+        pageSize: 50,
+      });
     });
 
-    // 1. Initial User List Load
-    socketInstance.on("response-chat-list", (response) => {
-      if (response.status === 200) setUsers(response.data);
+    // 1. Initial Load
+    socketInstance.on(SOCKET_EVENTS.RESPONSE_USER_LIST, (response) => {
+      if (response.status === 200) {
+        setUsers(response.data);
+      }
     });
 
-    // 2. Real-time Last Message Update (Incoming)
+    // 2. Incoming Messages
     socketInstance.on(
       SOCKET_EVENTS.RECEIVE_MESSAGE,
       (newMessage: ChatMessage) => {
@@ -92,33 +110,39 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
           typeof newMessage.sender === "string"
             ? newMessage.sender
             : newMessage.sender._id;
+
         updateUserData(senderId, { lastMessage: newMessage as any }, true);
-      },
+      }
     );
 
-    // 3. Real-time Last Message Update (Outgoing Success)
-    socketInstance.on(
-      SOCKET_EVENTS.MESSAGE_SENT_SUCCESS,
-      (sentMessage: ChatMessage) => {
-        const receiverId =
-          (sentMessage as any).receiverId || (sentMessage as any).receiver;
-        updateUserData(receiverId, { lastMessage: sentMessage as any }, true);
-      },
-    );
+    // 3. Outgoing Messages
+    socketInstance.on(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS, (response: any) => {
+      const msg = response.message || response;
+      const receiverId = msg.receiverId || (typeof msg.receiver === 'string' ? msg.receiver : msg.receiver?._id);
+      
+      if (receiverId) {
+        updateUserData(receiverId, { lastMessage: msg }, true);
+      }
+    });
 
-    // 4. Online/Offline Presence Toggles
+    // 4. Presence (Status Change)
     socketInstance.on(
-      "user-status-changed",
+      SOCKET_EVENTS.USER_STATUS_CHANGED,
       (data: { userId: string; isOnline: boolean }) => {
-        updateUserData(data.userId, { isOnline: data.isOnline });
-      },
+        // false here ensures the user stays in their current list position
+        updateUserData(data.userId, { isOnline: data.isOnline }, false);
+      }
     );
 
-    socketInstance.on("disconnect", () => setIsConnected(false));
+    socketInstance.on(SOCKET_EVENTS.DISCONNECT, () => setIsConnected(false));
 
     setSocket(socketInstance);
 
     return () => {
+      socketInstance.off(SOCKET_EVENTS.RESPONSE_USER_LIST);
+      socketInstance.off(SOCKET_EVENTS.RECEIVE_MESSAGE);
+      socketInstance.off(SOCKET_EVENTS.MESSAGE_SENT_SUCCESS);
+      socketInstance.off(SOCKET_EVENTS.USER_STATUS_CHANGED);
       socketInstance.disconnect();
     };
   }, [updateUserData]);
