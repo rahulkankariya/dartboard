@@ -1,26 +1,49 @@
 "use client";
 import { User } from "@/types/chat";
+import { MESSAGE_TYPES } from "@/constants/chat"; // Import your constants
 
 interface UserItemProps {
   user: User;
   isActive: boolean;
   onClick: () => void;
-  currentUserId: string; // Ensure this is passed from parent!
+  currentUserId: string;
 }
 
 export default function UserItem({ user, isActive, onClick, currentUserId }: UserItemProps) {
   const lastMessage = user.lastMessage;
-  
-  // Fix: Check if sender ID matches your ID
   const isMe = lastMessage?.sender === currentUserId;
-  
-  // Fix: Use nullish coalescing to hide badge if count is 0
-  const unreadCount = user.unreadCount ?? 10;
+  const unreadCount = user.unreadCount ?? 0;
 
-  const lastMsgContent = lastMessage?.content;
-  const displayMsg = lastMsgContent 
-    ? (isMe ? `You: ${lastMsgContent}` : lastMsgContent) 
-    : "No messages";
+  // --- Managed Message Type Logic ---
+  const getDisplayContent = () => {
+    if (!lastMessage) return "No messages";
+
+    let content = "";
+    
+    // Check type and return a friendly label
+    switch (lastMessage.messageType) {
+      case MESSAGE_TYPES.IMAGE:
+        content = "📷 Photo";
+        break;
+      case MESSAGE_TYPES.VIDEO:
+        content = "🎥 Video";
+        break;
+      case MESSAGE_TYPES.AUDIO:
+        content = "🎙️ Audio";
+        break;
+      case MESSAGE_TYPES.FILE:
+        content = "📄 Document";
+        break;
+      case MESSAGE_TYPES.TEXT:
+      default:
+        content = lastMessage.content || "";
+        break;
+    }
+
+    return isMe ? `You: ${content}` : content;
+  };
+
+  const displayMsg = getDisplayContent();
 
   const time = lastMessage?.createdAt 
     ? new Date(lastMessage.createdAt).toLocaleTimeString([], { 
