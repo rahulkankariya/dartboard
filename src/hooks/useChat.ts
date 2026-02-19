@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { SOCKET_EVENTS } from "@/constants/socket-events";
+import { MESSAGE_TYPES } from "@/constants/chat";
 
 export const useChat = (socket: any, activeUser: any) => {
   const [messages, setMessages] = useState<any[]>([]);
@@ -10,13 +11,13 @@ export const useChat = (socket: any, activeUser: any) => {
 
   // --- 1. SEND MESSAGE ---
   const sendMessage = useCallback(
-    (content: string) => {
+    (content: string,type: number =MESSAGE_TYPES.TEXT) => {
       if (!content.trim() || !socket || !activeUser) return;
 
       socket.emit(SOCKET_EVENTS.SEND_MESSAGE, {
         receiverId: activeUser._id,
         content: content.trim(),
-        type: 1,
+        type: type,
       });
       socket.emit(SOCKET_EVENTS.TYPING_STOP, { receiverId: activeUser._id });
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
