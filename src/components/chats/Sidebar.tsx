@@ -49,7 +49,8 @@ export default function Sidebar({ selectedUserId, onSelectUser }: SidebarProps) 
               key={user._id}
               user={user}
               isActive={selectedUserId === user._id}
-              onClick={() => onSelectUser(user)} currentUserId={""}            />
+              onClick={() => onSelectUser(user)}
+               currentUserId={""}            />
           ))
         ) : (
           <div className="p-8 text-center">

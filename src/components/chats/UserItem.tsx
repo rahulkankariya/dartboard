@@ -1,6 +1,7 @@
 "use client";
 import { User } from "@/types/chat";
-import { MESSAGE_TYPES } from "@/constants/chat"; // Import your constants
+import { MESSAGE_TYPES } from "@/constants/chat";
+import { Check } from "lucide-react"; // Import Check icon
 
 interface UserItemProps {
   user: User;
@@ -10,37 +11,37 @@ interface UserItemProps {
 }
 
 export default function UserItem({ user, isActive, onClick, currentUserId }: UserItemProps) {
+  console.log("Rendering UserItem for:", user); // Debug log to track rendering
   const lastMessage = user.lastMessage;
-  const isMe = lastMessage?.sender === currentUserId;
+
+  const senderId = typeof lastMessage?.sender === 'object' 
+    ? lastMessage?.sender?._id 
+    : lastMessage?.sender;
+
+  const sidebarUserId = String(user._id);
+
+  // Logic: If the sender ID of the last message is NOT the person in the sidebar, 
+  // then YOU must be the sender.
+  const isMe = lastMessage && senderId && String(senderId) !== sidebarUserId;
+  console.log("ISME",isMe)
   const unreadCount = user.unreadCount ?? 0;
+
+  // --- Read Status Logic for Sidebar ---
+  const isSeen = lastMessage?.status === "seen" || (lastMessage?.readStatus?.some((s: any) => s.readAt));
 
   // --- Managed Message Type Logic ---
   const getDisplayContent = () => {
     if (!lastMessage) return "No messages";
 
     let content = "";
-    
-    // Check type and return a friendly label
     switch (lastMessage.messageType) {
-      case MESSAGE_TYPES.IMAGE:
-        content = "📷 Photo";
-        break;
-      case MESSAGE_TYPES.VIDEO:
-        content = "🎥 Video";
-        break;
-      case MESSAGE_TYPES.AUDIO:
-        content = "🎙️ Audio";
-        break;
-      case MESSAGE_TYPES.FILE:
-        content = "📄 Document";
-        break;
-      case MESSAGE_TYPES.TEXT:
-      default:
-        content = lastMessage.content || "";
-        break;
+      case MESSAGE_TYPES.IMAGE: content = "📷 Photo"; break;
+      case MESSAGE_TYPES.VIDEO: content = "🎥 Video"; break;
+      case MESSAGE_TYPES.AUDIO: content = "🎙️ Audio"; break;
+      case MESSAGE_TYPES.FILE: content = "📄 Document"; break;
+      default: content = lastMessage.content || ""; break;
     }
-
-    return isMe ? `You: ${content}` : content;
+    return content;
   };
 
   const displayMsg = getDisplayContent();
@@ -77,21 +78,35 @@ export default function UserItem({ user, isActive, onClick, currentUserId }: Use
         <div className="flex justify-between items-baseline">
           <p className="text-sm font-medium truncate">{user.fullName}</p>
           {time && (
-            <span className="text-[10px] opacity-40 font-mono shrink-0 ml-2">
+            <span className={`text-[10px] font-mono shrink-0 ml-2 ${unreadCount > 0 ? 'text-app-accent font-bold' : 'opacity-40'}`}>
               {time}
             </span>
           )}
         </div>
         
         <div className="flex justify-between items-center mt-0.5">
-          <p className={`text-[11px] truncate flex-1 ${
-            unreadCount > 0 && !isActive ? "text-app-text font-semibold opacity-90" : "opacity-50"
-          }`}>
-            {displayMsg}
-          </p>
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            {/* Show Checkmarks only if I am the sender */}
+            {isMe && lastMessage && (
+              <div className="flex items-center shrink-0">
+                <div className="flex -space-x-2">
+                  <Check size={14} className={isSeen ? "text-blue-500" : "text-app-text/30"} strokeWidth={3} />
+                  <Check size={14} className={isSeen ? "text-blue-500" : "text-app-text/30"} strokeWidth={3} />
+                </div>
+              </div>
+            )}
+
+            <p className={`text-[11px] truncate ${
+              unreadCount > 0 && !isActive ? "text-app-text font-semibold opacity-100" : "opacity-50"
+            }`}>
+              {/* If not me, show message directly. If me, show checks + message */}
+              {!isMe && unreadCount > 0 ? <span className="text-app-accent font-bold mr-1">•</span> : null}
+              {displayMsg}
+            </p>
+          </div>
           
           {unreadCount > 0 && (
-            <span className="ml-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-app-accent px-1 text-[9px] font-bold text-white">
+            <span className="ml-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-app-accent px-1 text-[9px] font-bold text-white shadow-sm">
               {unreadCount}
             </span>
           )}

@@ -116,7 +116,7 @@ export const useChat = (socket: any, activeUser: any) => {
 
           if (isCorrectChat && m.status !== "seen") {
             if (data.status === "seen" && m.status !== "seen") {
-              console.log("Triggered SEEN logic");
+              // console.log("Triggered SEEN logic");
                return {
               ...m,
               status: "seen",
@@ -124,7 +124,7 @@ export const useChat = (socket: any, activeUser: any) => {
             };
             }
             if (data.status === "delivered" && m.status === "sent") {
-              console.log("Triggered DELIVERED logic");
+              // console.log("Triggered DELIVERED logic");
                return {
               ...m,
               status: "delivered",

@@ -23,14 +23,14 @@ export function useVoiceRecorder() {
       setDuration(0);
       startTimeRef.current = Date.now();
       
-      console.log("🎙️ Recording started at:", new Date(startTimeRef.current).toLocaleTimeString());
+      // console.log("🎙️ Recording started at:", new Date(startTimeRef.current).toLocaleTimeString());
 
       timerRef.current = setInterval(() => {
         const elapsed = Math.floor((Date.now() - (startTimeRef.current || 0)) / 1000);
         setDuration(elapsed);
         
         // Log timing to console for debugging
-        console.log(`⏱️ Recording duration: ${elapsed}s`);
+        // console.log(`⏱️ Recording duration: ${elapsed}s`);
       }, 1000);
 
     } catch (e: any) {

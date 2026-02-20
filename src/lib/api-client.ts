@@ -13,9 +13,9 @@ const apiClient = axios.create({
 
 export async function apiRequest<T>(endpoint: string, options: AxiosRequestConfig = {}): Promise<T> {
   // 1. Log BEFORE the try/catch to see if the function even starts
-  console.log(">>> API REQUEST STARTED");
-  console.log(">>> Base URL:", API_URL);
-  console.log(">>> Full Path:", `${API_URL}${endpoint}`);
+  // console.log(">>> API REQUEST STARTED");
+  // console.log(">>> Base URL:", API_URL);
+  // console.log(">>> Full Path:", `${API_URL}${endpoint}`);
 
   try {
     const response = await apiClient<T>({
@@ -25,7 +25,7 @@ export async function apiRequest<T>(endpoint: string, options: AxiosRequestConfi
     });
 
     // 2. This only logs if the status is 2xx
-    console.log(`[API SUCCESS] ${endpoint} - Status: ${response.status}`);
+    // console.log(`[API SUCCESS] ${endpoint} - Status: ${response.status}`);
     return response.data; 
   } catch (error: any) {
     // 3. Log the error specifically

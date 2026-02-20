@@ -11,16 +11,18 @@ export interface User {
   lastName: string;
   isOnline: boolean;
   lastSeen: string;
-  unreadCount?:number
+  unreadCount?: number;
   isTyping?: boolean;
-  
+
   // lastMessage can now be the message object or null
   lastMessage: {
     _id: string;
     content: string;
     createdAt: string;
-    sender: string;
+   sender: string | { _id: string; [key: string]: any };
     messageType: number;
+    status: string;
+    readStatus: MessageReadStatus[];
   } | null;
 }
 export interface ChatMessage {
@@ -28,7 +30,6 @@ export interface ChatMessage {
   content: string;
   sender: string | { _id: string };
   status?: string;
-  isRead?: boolean;
   createdAt?: string;
   readStatus: MessageReadStatus[];
   receiverId: string;

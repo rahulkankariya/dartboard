@@ -133,7 +133,7 @@ export default function MessageInput({ onSend, onSendVoice, onSendFile, placehol
                 onClick={() => triggerPicker("video")}
                 className="flex items-center gap-3 px-3 py-2 hover:bg-app-text/5 rounded-xl text-sm"
               >
-                <Film size={18} className="text-purple-500" /> Video 
+                <Film size={18} className="text-orange-500" /> Video 
               </button>
               <button 
                 onClick={() => triggerPicker("doc")}
@@ -149,11 +149,11 @@ export default function MessageInput({ onSend, onSendVoice, onSendFile, placehol
       <div className="flex-1 relative flex items-center">
         {isRecording ? (
           <div className="flex-1 flex items-center gap-4 bg-rose-50 rounded-full px-4 py-2 border border-rose-200">
-            <span className="text-sm font-mono text-rose-500 animate-pulse flex items-center gap-2">
-              <span className="h-2 w-2 bg-rose-500 rounded-full" />
+            <span className="text-sm font-mono text-orange-500 animate-pulse flex items-center gap-2">
+              <span className="h-2 w-2 bg-orange-500 rounded-full" />
               {formatTime(duration)}
             </span>
-            <div className="flex-1 flex items-center justify-center text-rose-400 text-xs italic">
+            <div className="flex-1 flex items-center justify-center text-orange-400 text-xs italic">
               Recording Voice...
             </div>
           </div>

@@ -41,7 +41,7 @@ const MessageItem = memo(({ msg, isOwn, activeUserId }: MessageItemProps) => {
       case MESSAGE_TYPES.AUDIO:
         return (
           /* Audio: Standardized width for the player */
-          <div className={`flex items-center gap-3 p-2 rounded-xl min-w-[200px] max-w-[240px] ${isOwn ? "bg-white/10" : "bg-app-accent/10"}`}>
+          <div className={`flex items-center gap-3 p-2 rounded-xl min-w-50 max-w-60 ${isOwn ? "bg-white/10" : "bg-app-accent/10"}`}>
             <audio controls className="h-8 w-full custom-audio-player">
               <source src={msg.content} type="audio/mpeg" />
               Your browser does not support the audio element.

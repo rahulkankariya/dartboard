@@ -27,7 +27,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
       const result = await uploadMedia(blob, fileName);
 
       if (result.success) {
-        console.log("Voice upload successful, server response:", result);
+        // console.log("Voice upload successful, server response:", result);
 
         // 1. Get the raw path from the server
         const rawPath = result.data[0].path; // Use .path instead of .fullOSPath if available
@@ -40,7 +40,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
         const cleanPath = rawPath.replace(/\\/g, "/");
         const savedAudioUrl = `${API_BASE}${cleanPath}`;
 
-        console.log("FINAL PLAYABLE URL:", savedAudioUrl);
+        // console.log("FINAL PLAYABLE URL:", savedAudioUrl);
         // This should look like: http://localhost:5000/uploads/1771517266178-683914147.mp3
 
         // 3. Send the HTTP URL, NOT the D:/ path
@@ -60,7 +60,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
     const result = await uploadMedia(file, fileName);
 
     if (result.success) {
-      console.log(`${type} upload successful:`, result);
+      // console.log(`${type} upload successful:`, result);
 
       // 2. Get the raw path and clean it
       const rawPath = result.data[0].path;
@@ -70,7 +70,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
       // 3. Build the final reachable URL
       const finalUrl = `${API_BASE}${cleanPath}`;
 
-      console.log(`FINAL ${type.toUpperCase()} URL:`, finalUrl);
+      // console.log(`FINAL ${type.toUpperCase()} URL:`, finalUrl);
 
       // 4. Map the internal 'file' type to your MESSAGE_TYPES constant
       let messageType;

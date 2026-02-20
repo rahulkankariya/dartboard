@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
   const isDashboardPage = pathname.startsWith('/dashboard');
 
   // DEBUG: Check your terminal to see if this triggers
-  console.log(`Checking route: ${pathname} | Session: ${!!session}`);
+  // console.log(`Checking route: ${pathname} | Session: ${!!session}`);
 
   // 2. BOUNCE LOGIC: Logged in users should NOT see Login/Signup
   if (isAuthPage && session) {
