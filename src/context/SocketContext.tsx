@@ -73,7 +73,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     if (!token) return;
 
     const socketInstance = ClientIO(
-      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000",
+      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:8080",
       { transports: ["websocket"], auth: { token } },
     );
 

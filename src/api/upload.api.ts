@@ -1,5 +1,5 @@
 // src/api/upload.api.ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // Updated type to accept a single item OR an array
 export const uploadMedia = async (

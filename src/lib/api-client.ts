@@ -24,10 +24,12 @@ export async function apiRequest<T>(endpoint: string, options: AxiosRequestConfi
       method: options.method || (options.data ? 'POST' : 'GET'),
     });
 
+    console.log("Respponse",response)
     // 2. This only logs if the status is 2xx
     // console.log(`[API SUCCESS] ${endpoint} - Status: ${response.status}`);
     return response.data; 
   } catch (error: any) {
+    console.log("Err",error)
     // 3. Log the error specifically
     console.error("[API ERROR] Details:", error.response?.status, error.response?.data);
     const errorMessage = error.response?.data?.message || error.message || "Unknown API Error";

@@ -34,7 +34,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
 
         // 2. Build the reachable URL
         // We combine your server address with the virtual path
-        const API_BASE = "http://localhost:5000";
+        const API_BASE = "http://localhost:8080";
 
         // Ensure we use forward slashes and remove any double slashes
         const cleanPath = rawPath.replace(/\\/g, "/");
@@ -64,7 +64,7 @@ export default function ChatArea({ activeUser }: { activeUser: User | null }) {
 
       // 2. Get the raw path and clean it
       const rawPath = result.data[0].path;
-      const API_BASE = "http://localhost:5000";
+      const API_BASE = "http://localhost:8080";
       const cleanPath = rawPath.replace(/\\/g, "/");
       
       // 3. Build the final reachable URL

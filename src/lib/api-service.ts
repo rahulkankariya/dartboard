@@ -9,7 +9,7 @@ export const authService = {
    * Logs in a user and returns token/user data
    */
   async login(payload: Record<string, any>): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>('/auth/login', {
+    return apiRequest<AuthResponse>('/login', {
       method: 'POST',
       data: payload,
     });
@@ -19,7 +19,7 @@ export const authService = {
    * Registers a new user and returns token/user data
    */
   async signup(payload: Record<string, any>): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>('/auth/register', {
+    return apiRequest<AuthResponse>(' /register', {
       method: 'POST',
       data: payload,
     });
@@ -29,7 +29,7 @@ export const authService = {
    * Example: Get current user profile using the token
    */
   async getProfile(token: string): Promise<AuthResponse['user']> {
-    return apiRequest<AuthResponse['user']>('/auth/profile', {
+    return apiRequest<AuthResponse['user']>('/profile', {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
