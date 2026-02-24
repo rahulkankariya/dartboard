@@ -8,7 +8,9 @@ import {
   LogOut, 
   Sun, 
   Moon, 
-  MessageSquare 
+  MessageSquare,
+  Network, // Added for Hierarchy
+  ChevronRight
 } from "lucide-react";
 import { useSocket } from "@/context/SocketContext";
 import { logout } from "@/actions/auth";
@@ -22,9 +24,19 @@ interface NavbarProps {
   activeSession?: string | null;
   isChatOpen?: boolean;
   onToggleChat?: () => void;
+  // NEW PROPS FOR HIERARCHY
+  isHierarchyOpen?: boolean;
+  onToggleHierarchy?: () => void;
 }
 
-export function Navbar({ user, activeSession, isChatOpen, onToggleChat }: NavbarProps) {
+export function Navbar({ 
+  user, 
+  activeSession, 
+  isChatOpen, 
+  onToggleChat,
+  isHierarchyOpen,
+  onToggleHierarchy 
+}: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -61,8 +73,23 @@ export function Navbar({ user, activeSession, isChatOpen, onToggleChat }: Navbar
           )}
         </div>
 
-        {/* DESKTOP NAV (Hidden on Mobile) */}
-        <div className="hidden md:flex items-center gap-6">
+        {/* DESKTOP NAV */}
+        <div className="hidden md:flex items-center gap-4">
+          
+          {/* HIERARCHY TOGGLE */}
+          <button 
+            onClick={onToggleHierarchy}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all border ${
+              isHierarchyOpen 
+                ? 'bg-app-accent/10 border-app-accent text-app-accent' 
+                : 'border-transparent text-app-text/60 hover:text-app-accent hover:border-app-accent/20'
+            }`}
+          >
+            <Network size={20} />
+            <span className="text-xs font-bold uppercase tracking-widest">Hierarchy</span>
+          </button>
+
+          {/* CHAT TOGGLE */}
           <button 
             onClick={onToggleChat}
             className={`p-2 transition-colors relative ${isChatOpen ? 'text-app-accent' : 'text-app-text/60 hover:text-app-accent'}`}
@@ -72,7 +99,7 @@ export function Navbar({ user, activeSession, isChatOpen, onToggleChat }: Navbar
           </button>
 
           {user && (
-            <div className="flex items-center gap-3 pr-4 border-r border-app-border">
+            <div className="flex items-center gap-3 px-4 border-x border-app-border">
               <div className="text-right">
                 <p className="text-[10px] uppercase tracking-tighter text-app-text/40">Operator</p>
                 <p className="text-sm font-medium text-app-text">{user.firstName} {user.lastName}</p>
@@ -97,18 +124,19 @@ export function Navbar({ user, activeSession, isChatOpen, onToggleChat }: Navbar
         </div>
 
         {/* MOBILE ACTION BAR */}
-        <div className="flex md:hidden items-center gap-2">
-          {/* Quick Chat Toggle for Mobile */}
+        <div className="flex md:hidden items-center gap-1">
+          <button 
+            onClick={onToggleHierarchy}
+            className={`p-2 ${isHierarchyOpen ? 'text-app-accent' : 'text-app-text/60'}`}
+          >
+            <Network size={22} />
+          </button>
+
           <button 
             onClick={onToggleChat}
             className={`p-2 relative ${isChatOpen ? 'text-app-accent' : 'text-app-text/60'}`}
           >
             <MessageSquare size={22} />
-            {isChatOpen && <span className="absolute top-1 right-1 h-2 w-2 bg-app-accent rounded-full border border-app-bg" />}
-          </button>
-
-          <button onClick={toggleTheme} className="p-2 text-app-text/60">
-            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
           <button className="text-app-accent p-2 ml-1" onClick={() => setIsOpen(!isOpen)}>
@@ -119,11 +147,11 @@ export function Navbar({ user, activeSession, isChatOpen, onToggleChat }: Navbar
 
       {/* MOBILE DROPDOWN MENU */}
       {isOpen && (
-        <div className="md:hidden p-6 bg-app-bg border-b border-app-border flex flex-col gap-4 animate-in slide-in-from-top-4">
+        <div className="md:hidden p-6 bg-app-bg border-b border-app-border flex flex-col gap-3 animate-in slide-in-from-top-4">
           {user && (
             <div className="flex items-center gap-4 mb-2 p-2">
                <div className="h-12 w-12 rounded-full bg-app-accent/10 border border-app-accent/20 flex items-center justify-center text-app-accent font-bold">
-                {user.image ? <img src={user.image} alt="Profile" className="rounded-full" /> : initials}
+                {user.image ? <img src={user.image} alt="Profile" className="rounded-full h-full w-full object-cover" /> : initials}
               </div>
               <div>
                 <p className="text-xs uppercase text-app-text/40">Operator</p>
@@ -132,23 +160,43 @@ export function Navbar({ user, activeSession, isChatOpen, onToggleChat }: Navbar
             </div>
           )}
 
+          {/* HIERARCHY BUTTON */}
+          <button 
+            onClick={() => { onToggleHierarchy?.(); setIsOpen(false); }}
+            className={`w-full flex items-center justify-between p-4 rounded-xl font-bold border transition-colors ${
+              isHierarchyOpen 
+                ? "bg-app-accent/10 border-app-accent text-app-accent" 
+                : "border-app-border text-app-text"
+            }`}
+          >
+            <div className="flex items-center gap-3"><Network size={20} /> Family Tree</div>
+            <ChevronRight size={16} className="opacity-40" />
+          </button>
+
+          {/* CHAT BUTTON */}
           <button 
             onClick={() => { onToggleChat?.(); setIsOpen(false); }}
-            className={`w-full flex items-center justify-center gap-2 p-4 rounded-xl font-bold border transition-colors ${
+            className={`w-full flex items-center justify-between p-4 rounded-xl font-bold border transition-colors ${
               isChatOpen 
                 ? "bg-app-accent/10 border-app-accent text-app-accent" 
                 : "border-app-border text-app-text"
             }`}
           >
-            <MessageSquare size={20} /> {isChatOpen ? "Close Chat" : "Open Chat"}
+            <div className="flex items-center gap-3"><MessageSquare size={20} /> System Chat</div>
+            <ChevronRight size={16} className="opacity-40" />
           </button>
 
-          <button 
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 p-4 text-red-500 font-bold border border-red-500/20 rounded-xl hover:bg-red-500/5"
-          >
-            <LogOut size={20} /> Logout
-          </button>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <button onClick={toggleTheme} className="flex items-center justify-center gap-2 p-4 border border-app-border rounded-xl text-app-text/60">
+                {theme === "dark" ? <><Sun size={18}/> Light</> : <><Moon size={18}/> Dark</>}
+            </button>
+            <button 
+                onClick={handleLogout}
+                className="flex items-center justify-center gap-2 p-4 text-red-500 font-bold border border-red-500/20 rounded-xl hover:bg-red-500/5 transition-all"
+            >
+                <LogOut size={20} /> Logout
+            </button>
+          </div>
         </div>
       )}
     </nav>

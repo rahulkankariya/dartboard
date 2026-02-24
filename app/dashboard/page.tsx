@@ -10,12 +10,15 @@ import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { ModeSelection } from "@/components/dashboard/ModeSelection";
 import { ActiveSession } from "@/components/dashboard/ActiveSession";
 import { ChatOverlay } from "@/components/chats/ChatOverlay";
+import  OrgHierarchy  from "@/components/hierarchy/OrgHierarchy";
 
 export type GameMode = "classic" | "rotate" | "slide" | null;
 
 export default function DashboardPage() {
   const [selectedMode, setSelectedMode] = useState<GameMode>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+   const [isHierarchyOpen, setIsHierarchyOpen] = useState(false);
+
 
   const terminateSession = useCallback(() => setSelectedMode(null), []);
   const closeChat = useCallback(() => setIsChatOpen(false), []);
@@ -26,10 +29,15 @@ export default function DashboardPage() {
    
       <div className="h-screen flex flex-col bg-app-bg text-app-text overflow-hidden transition-colors duration-300">
         <Navbar 
-          user={{ firstName: "John", lastName: "Doe" }} 
+          user={{ firstName: "Rahul", lastName: "Kankariya" }} 
           activeSession={selectedMode} 
           isChatOpen={isChatOpen}
           onToggleChat={() => setIsChatOpen(!isChatOpen)}
+          isHierarchyOpen={isHierarchyOpen}
+      onToggleHierarchy={() => {
+        setIsHierarchyOpen(!isHierarchyOpen);
+        if (!isHierarchyOpen) setIsChatOpen(false); // Close chat if hierarchy opens
+      }}
         />
 
         <main className="flex-1 overflow-hidden flex flex-col relative">
@@ -52,6 +60,8 @@ export default function DashboardPage() {
 
           {/* Chat Layer */}
           <ChatOverlay isOpen={isChatOpen} onClose={closeChat} />
+
+          <OrgHierarchy isOpen={isHierarchyOpen} onClose={() => setIsHierarchyOpen(false)} />
         </main>
       </div>
     
