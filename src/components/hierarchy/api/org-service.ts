@@ -9,11 +9,12 @@ export const orgService = {
     return response.data || []; // Returns Employee[]
   },
 
-  // Search API: Only called in Modal
-  searchUsers: async (query: string) => {
-    const response = await authService.getHierarchyUsers(1, 15, query);
-    return response?.data?.users || [];
-  },
+searchUsers: async (query: string, page: number = 1) => {
+  const response = await authService.getHierarchyUsers(page, 10, query);
+  
+  // Return the users array from the response
+  return response?.data?.users || [];
+},
   
   addMember: async (userId: string, managerId: string) => {
     return await authService.addHierarchyMember({ userId, managerId });

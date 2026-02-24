@@ -8,7 +8,8 @@ export interface Employee {
 
 export interface ExternalUser {
   id: string;
-  name: string;
+  firstName: string; 
+  lastName: string;
   email: string;
-  title?: string;
+  desingation?: string; // Matching the typo 'desingation' to fix the error
 }
