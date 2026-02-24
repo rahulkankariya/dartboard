@@ -17,23 +17,25 @@ export async function apiRequest<T>(endpoint: string, options: AxiosRequestConfi
   // console.log(">>> Base URL:", API_URL);
   // console.log(">>> Full Path:", `${API_URL}${endpoint}`);
 
-  try {
-    const response = await apiClient<T>({
-      url: endpoint,
-      ...options,
-      method: options.method || (options.data ? 'POST' : 'GET'),
-    });
+ try {
+  const response = await apiClient<T>({
+    url: endpoint,
+    // Explicitly use the method passed from service, 
+    // only fallback to POST/GET if not provided
+    method: options.method || (options.data ? 'POST' : 'GET'),
+    ...options,
+  });
 
-    console.log("Respponse",response)
-    // 2. This only logs if the status is 2xx
-    // console.log(`[API SUCCESS] ${endpoint} - Status: ${response.status}`);
-    return response.data; 
-  } catch (error: any) {
-    console.log("Err",error)
-    // 3. Log the error specifically
-    console.error("[API ERROR] Details:", error.response?.status, error.response?.data);
-    const errorMessage = error.response?.data?.message || error.message || "Unknown API Error";
-    console.error(`[API ERROR] ${endpoint} - ${errorMessage}`);
-    throw new Error(errorMessage);
-  }
+  return response.data; 
+} catch (error: any) {
+  // If the error is undefined, it means the request failed 
+  // (Network error, CORS, or invalid URL)
+  const status = error.response?.status;
+  const data = error.response?.data;
+
+  console.error("[API ERROR] Details:", status ?? "No Status", data ?? "No Data");
+  
+  const errorMessage = data?.message || error.message || "Unknown API Error";
+  throw new Error(errorMessage);
+}
 }
