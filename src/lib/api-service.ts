@@ -10,7 +10,7 @@ export const authService = {
   },
 
   async signup(payload: Record<string, any>): Promise<AuthResponse> {
-    return apiRequest<AuthResponse>(" /register", {
+    return apiRequest<AuthResponse>("/register", {
       method: "POST",
       data: payload,
     });
@@ -24,14 +24,13 @@ export const authService = {
     const token = getCookie("socket-token");
     if (!token) return;
 
-    // Construct query parameters
     const query = `?start=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
 
     return apiRequest(`/hierarchy/user-list${query}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
-        "x-api-key": "123456789abcdef", // Added from your curl example
+
       },
     });
   },
@@ -59,10 +58,8 @@ export const authService = {
       },
     });
   },
- async editHierarchyMember(payload: { id: string; managerId: string,userId:string }): Promise<any> {
-  console.log("payload",payload)
+ async editHierarchyMember(payload: { id: string; managerId: string; userId: string }): Promise<any> {
   const token = getCookie("socket-token");
-  // Pass ID in the URL, pass managerId in the body
   return apiRequest(`/hierarchy/${payload.id}`, {
     method: "PUT",
     data: { 
@@ -76,7 +73,7 @@ export const authService = {
 },
 async deleteHierarchyMember(payload: { id: string }): Promise<any> {
   const token = getCookie("socket-token");
-  // Pass ID in the URL
+  // Correctly using payload.id in the template literal
   return apiRequest(`/hierarchy/${payload.id}`, {
     method: "DELETE",
     headers: {

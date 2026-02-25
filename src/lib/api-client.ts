@@ -28,14 +28,10 @@ export async function apiRequest<T>(endpoint: string, options: AxiosRequestConfi
 
   return response.data; 
 } catch (error: any) {
-  // If the error is undefined, it means the request failed 
-  // (Network error, CORS, or invalid URL)
-  const status = error.response?.status;
-  const data = error.response?.data;
-
-  console.error("[API ERROR] Details:", status ?? "No Status", data ?? "No Data");
-  
-  const errorMessage = data?.message || error.message || "Unknown API Error";
-  throw new Error(errorMessage);
+  if (error.response) {
+      // This is what handleDelete needs to see the 400 message
+      throw error; 
+    }
+    throw new Error("Network error");
 }
 }
