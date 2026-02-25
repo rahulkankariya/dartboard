@@ -21,8 +21,8 @@ searchUsers: async (query: string, page: number = 1) => {
   },
 
   
-  editMember: async (id: string, managerId: string) => {
-    return await authService.editHierarchyMember({ id, managerId });
+  editMember: async (id: string, managerId: string,userId:string) => {
+    return await authService.editHierarchyMember({ id, managerId,userId });
   },
 
   

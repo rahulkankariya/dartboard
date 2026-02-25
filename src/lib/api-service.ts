@@ -59,12 +59,16 @@ export const authService = {
       },
     });
   },
- async editHierarchyMember(payload: { id: string; managerId: string }): Promise<any> {
+ async editHierarchyMember(payload: { id: string; managerId: string,userId:string }): Promise<any> {
+  console.log("payload",payload)
   const token = getCookie("socket-token");
   // Pass ID in the URL, pass managerId in the body
   return apiRequest(`/hierarchy/${payload.id}`, {
     method: "PUT",
-    data: { managerId: payload.managerId }, 
+    data: { 
+      managerId: payload.managerId,
+      userId:payload.userId
+     }, 
     headers: {
       Authorization: `Bearer ${token}`,
     },
