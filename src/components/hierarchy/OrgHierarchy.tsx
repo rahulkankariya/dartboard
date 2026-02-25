@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Network, X, Loader2 } from "lucide-react";
+import { Network, X, Loader2, Columns, Rows } from "lucide-react";
 import { toast } from "sonner";
 
 // Types
@@ -16,6 +16,18 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 // API
 import { orgService } from "./api/org-service";
 
+// Helper to get all IDs for "Expand All"
+const getAllNodeIds = (nodes: Employee[]): string[] => {
+  let ids: string[] = [];
+  nodes.forEach((node) => {
+    ids.push(node.id);
+    if (node.children && node.children.length > 0) {
+      ids = [...ids, ...getAllNodeIds(node.children)];
+    }
+  });
+  return ids;
+};
+
 export default function OrgHierarchyContainer({
   isOpen,
   onClose,
@@ -23,19 +35,23 @@ export default function OrgHierarchyContainer({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  // --- STATE ---
+  // --- STATE: Data & Loading ---
   const [roots, setRoots] = useState<Employee[]>([]);
   const [availableUsers, setAvailableUsers] = useState<ExternalUser[]>([]);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  // --- STATE: UI & Layout ---
+  const [layout, setLayout] = useState<"vertical" | "horizontal">("vertical");
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  
+  // --- STATE: Editing & Search ---
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [editingNode, setEditingNode] = useState<Employee | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const isFetchingRef = useRef(false);
@@ -45,8 +61,12 @@ export default function OrgHierarchyContainer({
     setIsInitialLoading(true);
     try {
       const response = await orgService.getInitialChart();
-      setRoots(response || []);
-      if (response?.length > 0) setExpandedIds(new Set([response[0].id]));
+      const data = response || [];
+      setRoots(data);
+      // Default: Expand everything on first load
+      if (data.length > 0) {
+        setExpandedIds(new Set(getAllNodeIds(data)));
+      }
     } catch (e) {
       console.error("Failed to load chart:", e);
       toast.error("Failed to sync organization chart");
@@ -73,13 +93,8 @@ export default function OrgHierarchyContainer({
       toast.success("Member successfully removed");
       await loadChart();
     } catch (e: any) {
-      // FIX: Extracting the specific 400 error message from Axios response
-      const apiErrorMessage =
-        e.response?.data?.message || "This member cannot be removed";
-      toast.error("Delete Failed", {
-        description: apiErrorMessage,
-      });
-      console.error("Delete error:", e);
+      const apiErrorMessage = e.response?.data?.message || "This member cannot be removed";
+      toast.error("Delete Failed", { description: apiErrorMessage });
     } finally {
       setDeleteConfirmId(null);
     }
@@ -90,7 +105,7 @@ export default function OrgHierarchyContainer({
     if (isOpen) loadChart();
   }, [isOpen]);
 
-  // Search Logic
+  // Search Logic (Debounced)
   useEffect(() => {
     if (!editingNode) return;
 
@@ -101,10 +116,7 @@ export default function OrgHierarchyContainer({
         setAvailableUsers((prev) => {
           if (page === 1) return results;
           const existingIds = new Set(prev.map((u) => u.id));
-          return [
-            ...prev,
-            ...results.filter((u: any) => !existingIds.has(u.id)),
-          ];
+          return [...prev, ...results.filter((u: any) => !existingIds.has(u.id))];
         });
         setHasMore(results.length === 10);
       } catch (e) {
@@ -128,39 +140,68 @@ export default function OrgHierarchyContainer({
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-100 flex flex-col bg-slate-50"
       >
-        {/* Header */}
-        <header className="p-6 bg-white border-b flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="bg-indigo-600 p-2 rounded-lg text-white">
-              <Network size={20} />
+        {/* Header with New Controls */}
+        <header className="p-4 bg-white border-b flex items-center justify-between shadow-sm shrink-0">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="bg-indigo-600 p-1.5 rounded text-white">
+                <Network size={18} />
+              </div>
+              <h1 className="font-bold text-slate-800">Org Hierarchy</h1>
             </div>
-            <h1 className="font-black uppercase tracking-tight text-slate-800 text-lg">
-              Org Hierarchy
-            </h1>
+
+            {/* Expand/Collapse Controls */}
+            <div className="flex bg-slate-100 p-1 rounded-md border text-[10px] font-bold">
+              <button 
+                onClick={() => setExpandedIds(new Set(getAllNodeIds(roots)))} 
+                className="px-2 py-1 hover:bg-white rounded transition-all uppercase"
+              >
+                Expand All
+              </button>
+              <button 
+                onClick={() => setExpandedIds(new Set())} 
+                className="px-2 py-1 hover:bg-white rounded transition-all uppercase"
+              >
+                Collapse
+              </button>
+            </div>
+
+            {/* Layout Toggle */}
+            <div className="flex bg-indigo-50 p-1 rounded-md border border-indigo-100 gap-1">
+              <button 
+                onClick={() => setLayout("vertical")}
+                className={`flex items-center gap-1 px-3 py-1 rounded text-[10px] font-bold transition-all ${layout === 'vertical' ? 'bg-indigo-600 text-white' : 'text-indigo-600'}`}
+              >
+                <Rows size={14} /> VERTICAL
+              </button>
+              <button 
+                onClick={() => setLayout("horizontal")}
+                className={`flex items-center gap-1 px-3 py-1 rounded text-[10px] font-bold transition-all ${layout === 'horizontal' ? 'bg-indigo-600 text-white' : 'text-indigo-600'}`}
+              >
+                <Columns size={14} /> HORIZONTAL
+              </button>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-red-50 hover:text-red-500 rounded-xl transition-colors"
-          >
+          
+          <button onClick={onClose} className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors">
             <X size={20} />
           </button>
         </header>
 
         {/* Tree Container */}
-        <main className="flex-1 overflow-auto p-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] bg-size-[32px_32px]">
+        <main className="flex-1 overflow-auto p-12 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] bg-size-[24px_24px]">
           {isInitialLoading ? (
-            <div className="flex flex-col items-center mt-20 gap-4">
-              <Loader2 className="animate-spin text-indigo-600" size={32} />
-              <p className="text-slate-400 font-medium">
-                Loading organization...
-              </p>
+            <div className="flex flex-col items-center mt-20 gap-3 text-slate-400">
+              <Loader2 className="animate-spin" />
+              <p>Building hierarchy...</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center min-w-max">
+            <div className={`flex ${layout === "vertical" ? "flex-col items-center" : "flex-row items-start"} min-w-max justify-center`}>
               {roots.map((root) => (
                 <TreeNode
                   key={root.id}
                   node={root}
+                  layout={layout}
                   expandedIds={expandedIds}
                   onEdit={(n) => {
                     handleCancel();
@@ -169,30 +210,21 @@ export default function OrgHierarchyContainer({
                   onAdd={(mgrId) => {
                     handleCancel();
                     setIsAddingNew(true);
-                    setEditingNode({
-                      id: "",
-                      userId: "",
-                      name: "",
-                      title: "",
-                      managerId: mgrId,
-                      children: [],
-                    });
+                    setEditingNode({ id: "", userId: "", name: "", title: "", managerId: mgrId, children: [] });
                   }}
                   onDelete={(id) => setDeleteConfirmId(id)}
-                  onToggle={(id) =>
-                    setExpandedIds((prev) => {
-                      const next = new Set(prev);
-                      next.has(id) ? next.delete(id) : next.add(id);
-                      return next;
-                    })
-                  }
+                  onToggle={(id) => setExpandedIds(prev => {
+                    const next = new Set(prev);
+                    next.has(id) ? next.delete(id) : next.add(id);
+                    return next;
+                  })}
                 />
               ))}
             </div>
           )}
         </main>
 
-        {/* Edit Modal with Separate Saving State */}
+        {/* Edit Modal Logic (Restored) */}
         {editingNode && (
           <EditModal
             node={editingNode}
@@ -222,18 +254,13 @@ export default function OrgHierarchyContainer({
                   await orgService.addMember(updated.userId, updated.managerId);
                   toast.success("User assigned to hierarchy");
                 } else {
-                  await orgService.editMember(
-                    updated.id,
-                    updated.managerId,
-                    updated.userId,
-                  );
+                  await orgService.editMember(updated.id, updated.managerId, updated.userId);
                   toast.success("Hierarchy updated");
                 }
                 await loadChart();
                 handleCancel();
               } catch (e: any) {
-                const errorMsg =
-                  e.response?.data?.message || "Failed to update hierarchy";
+                const errorMsg = e.response?.data?.message || "Failed to update hierarchy";
                 toast.error(errorMsg);
               } finally {
                 setIsSaving(false);
