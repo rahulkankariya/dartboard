@@ -112,7 +112,7 @@ export const EditModal = ({
                       <p
                         className={`text-[10px] ${node.userId === u.id ? "text-white/60" : "text-slate-400"}`}
                       >
-                        {u.email}
+                        {u.jobTitle}
                       </p>
                     </div>
                   </div>

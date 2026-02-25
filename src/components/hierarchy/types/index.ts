@@ -12,5 +12,6 @@ export interface ExternalUser {
   firstName: string; 
   lastName: string;
   email: string;
+  jobTitle:string
   desingation?: string; // Matching the typo 'desingation' to fix the error
 }
