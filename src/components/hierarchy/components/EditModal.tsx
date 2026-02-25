@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2, X, UserCheck, Users } from "lucide-react";
+import { Search, Loader2, X, UserCheck } from "lucide-react";
 import { Employee, ExternalUser } from "../types";
 
 interface ModalProps {
@@ -8,7 +8,7 @@ interface ModalProps {
   availableUsers: ExternalUser[];
   isLoading: boolean;
   hasMore: boolean;
-  searchTerm: string; // Added this
+  searchTerm: string;
   onSearch: (query: string) => void;
   onLoadMore: () => void;
   onSave: (updated: Employee) => void;
@@ -18,24 +18,23 @@ interface ModalProps {
 
 export const EditModal = ({ node, availableUsers, isLoading, hasMore, searchTerm, onSearch, onLoadMore, onSave, onCancel, onUpdateField }: ModalProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const handleScroll = () => {
-    if (!scrollRef.current || isLoading || !hasMore) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    if (scrollHeight - scrollTop <= clientHeight + 30) onLoadMore();
-  };
 
-  const handleUserSelect = (user: ExternalUser) => {
-    onUpdateField({ 
-      ...node, 
-      userId: user.id, 
-      name: `${user.firstName} ${user.lastName}`.trim(), 
-      title: user?.desingation || "Team Member"
-    });
+  const handleScroll = () => {
+    const container = scrollRef.current;
+    // If isLoading is true, we block the scroll trigger entirely
+    if (!container || isLoading || !hasMore) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    
+    // Using a tight 5px threshold to ensure we are truly at the bottom
+    if (Math.ceil(scrollTop + clientHeight) >= scrollHeight - 5) {
+      onLoadMore();
+    }
   };
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-110 flex items-center justify-center p-4">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-4xl shadow-2xl w-full max-w-md overflow-hidden">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white rounded-4xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
         <div className="p-6 border-b flex justify-between items-center bg-white">
           <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Assign Member</h2>
           <button onClick={onCancel} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={18}/></button>
@@ -47,49 +46,46 @@ export const EditModal = ({ node, availableUsers, isLoading, hasMore, searchTerm
             <input 
               autoFocus 
               className="w-full bg-white p-4 pl-12 rounded-2xl border-2 border-transparent focus:border-indigo-500 text-sm font-bold outline-none shadow-sm" 
-              placeholder="Start typing name..." 
+              placeholder="Search directory..." 
               value={searchTerm}
               onChange={(e) => onSearch(e.target.value)} 
             />
           </div>
         </div>
 
-        <div ref={scrollRef} onScroll={handleScroll} className="overflow-y-auto h-80 px-4 py-2">
+        <div 
+          ref={scrollRef} 
+          onScroll={handleScroll} 
+          className="overflow-y-auto flex-1 px-4 py-2 bg-white"
+        >
           {availableUsers.length > 0 ? (
-            availableUsers.map(u => (
-              <button 
-                key={u.id} 
-                onClick={() => handleUserSelect(u)} 
-                className={`w-full flex items-center justify-between p-4 my-1 rounded-2xl transition-all ${node.userId === u.id ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-600'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black ${node.userId === u.id ? 'bg-white/20' : 'bg-indigo-100 text-indigo-600'}`}>
-                    {u.firstName?.[0]}{u.lastName?.[0]}
+            <>
+              {availableUsers.map((u) => (
+                <button 
+                  key={u.id} 
+                  onClick={() => onUpdateField({ ...node, userId: u.id, name: `${u.firstName} ${u.lastName}`, title: "Team Member" })} 
+                  className={`w-full flex items-center justify-between p-4 my-1 rounded-2xl transition-all ${node.userId === u.id ? 'bg-indigo-600 text-white shadow-lg' : 'hover:bg-slate-50 text-slate-600'}`}
+                >
+                  <div className="flex items-center gap-3 text-left">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${node.userId === u.id ? 'bg-white/20' : 'bg-indigo-100 text-indigo-600'}`}>
+                      {u.firstName?.[0]}{u.lastName?.[0]}
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-bold truncate">{u.firstName} {u.lastName}</p>
+                      <p className={`text-[10px] truncate ${node.userId === u.id ? 'text-white/60' : 'text-slate-400'}`}>{u.email}</p>
+                    </div>
                   </div>
-                  <div className="text-left">
-                    <p className="text-sm font-bold">{u.firstName} {u.lastName}</p>
-                    <p className={`text-[10px] ${node.userId === u.id ? 'text-white/60' : 'text-slate-400'}`}>{u.email}</p>
-                  </div>
-                </div>
-                {node.userId === u.id && <UserCheck size={18} />}
-              </button>
-            ))
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
-              {isLoading ? (
-                <Loader2 className="animate-spin text-indigo-600" />
-              ) : !searchTerm ? (
-                <>
-                  <Users size={32} strokeWidth={1.5} />
-                  <p className="text-xs font-bold uppercase tracking-wider">Type to search directory</p>
-                </>
-              ) : (
-                <p className="text-xs font-bold uppercase tracking-wider">No results found for "{searchTerm}"</p>
+                  {node.userId === u.id && <UserCheck size={18} className="shrink-0" />}
+                </button>
+              ))}
+              {isLoading && (
+                <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-indigo-600" size={20}/></div>
               )}
+            </>
+          ) : (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-400 gap-2 opacity-60">
+              {isLoading ? <Loader2 className="animate-spin text-indigo-600" /> : <p className="text-xs font-bold uppercase tracking-wider">No results found</p>}
             </div>
-          )}
-          {isLoading && availableUsers.length > 0 && (
-            <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-indigo-600" size={20}/></div>
           )}
         </div>
 
@@ -99,9 +95,7 @@ export const EditModal = ({ node, availableUsers, isLoading, hasMore, searchTerm
             disabled={!node.userId || isLoading} 
             onClick={() => onSave(node)} 
             className="flex-2 p-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-700 disabled:opacity-30 transition-all uppercase text-[11px] tracking-widest"
-          >
-            Confirm Assignment
-          </button>
+          >Confirm Assignment</button>
         </div>
       </motion.div>
     </div>
